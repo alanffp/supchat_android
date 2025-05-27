@@ -20,6 +20,7 @@ import com.example.supchat.models.response.messageprivate.PrivateMessageItem
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
 import com.example.supchat.socket.WebSocketService
 import com.example.supchat.ui.chat.PrivateConversationFragment
+import com.example.supchat.services.NotificationService
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
@@ -32,8 +33,9 @@ class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener
     private lateinit var emptyTextView: TextView
     private lateinit var messagesAdapter: PrivateMessagesAdapter
 
-    // ✅ NOUVEAU: WebSocket
+    // ✅ NOUVEAU: WebSocket et Notifications
     private lateinit var webSocketService: WebSocketService
+    private lateinit var notificationService: NotificationService
     private var conversations = mutableListOf<PrivateMessageItem>()
 
     companion object {
@@ -47,12 +49,14 @@ class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ NOUVEAU: Initialiser WebSocket listener
+        // ✅ Initialiser WebSocket et Notifications
         val app = requireActivity().application as SupChatApplication
         webSocketService = app.getWebSocketService() ?: WebSocketService.getInstance()
         webSocketService.addMessageListener(this)
 
-        Log.d(TAG, "WebSocket listener ajouté")
+        notificationService = NotificationService.getInstance()
+
+        Log.d(TAG, "Services initialisés")
     }
 
     override fun onCreateView(
@@ -148,7 +152,39 @@ class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener
         }
     }
 
-    // ✅ NOUVEAU: Recharger discrètement sans spinner
+    // ✅ NOUVEAU: Observer les notifications
+    private fun setupNotificationObservers() {
+        // Observer les compteurs de messages non lus
+        notificationService.unreadPrivateMessages.observe(viewLifecycleOwner, Observer { unreadMap ->
+            Log.d(TAG, "Mise à jour des compteurs non lus: $unreadMap")
+            updateConversationsWithUnreadCounts(unreadMap)
+        })
+
+        // Observer les nouvelles notifications via WebSocket
+        webSocketService.newNotification.observe(viewLifecycleOwner, Observer { notificationJson ->
+            Log.d(TAG, "Nouvelle notification WebSocket reçue")
+            // Recharger les notifications pour mettre à jour les compteurs
+            notificationService.loadNotifications(requireContext())
+        })
+    }
+
+    // ✅ NOUVEAU: Mettre à jour les conversations avec les compteurs
+    private fun updateConversationsWithUnreadCounts(unreadMap: Map<String, Int>) {
+        var hasChanges = false
+
+        conversations.forEachIndexed { index, conversation ->
+            val unreadCount = unreadMap[conversation.conversationId] ?: 0
+            if (conversation.unreadCount != unreadCount) {
+                conversations[index] = conversation.copy(unreadCount = unreadCount)
+                hasChanges = true
+            }
+        }
+
+        if (hasChanges) {
+            messagesAdapter.updateConversations(conversations)
+            Log.d(TAG, "Conversations mises à jour avec nouveaux compteurs")
+        }
+    }
     private fun refreshConversationsQuietly() {
         val token = getAuthToken()
         if (token.isEmpty()) return
@@ -266,10 +302,21 @@ class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener
     private fun navigateToPrivateChat(conversation: PrivateMessageItem) {
         val currentUserId = getCurrentUserId()
 
-        Log.d(TAG, "Navigation vers chat avec: ${conversation.user.username}")
+        Log.d(TAG, "=== NAVIGATION VERS CHAT ===")
+        Log.d(TAG, "conversation.conversationId: '${conversation.conversationId}'")
+        Log.d(TAG, "conversation.user.id: '${conversation.user.id}'")
+        Log.d(TAG, "conversation.user.username: '${conversation.user.username}'")
+        Log.d(TAG, "currentUserId: '$currentUserId'")
+        Log.d(TAG, "===============================")
+
+        // Utiliser l'ID de conversation fourni par l'API
+        val validConversationId = conversation.conversationId.ifEmpty {
+            Log.w(TAG, "ConversationId vide, utilisation de l'userId comme fallback")
+            conversation.user.id
+        }
 
         val chatFragment = PrivateConversationFragment.newInstance(
-            conversationId = conversation.conversationId,
+            conversationId = validConversationId,
             otherUserId = conversation.user.id,
             username = conversation.user.username,
             myUserId = currentUserId,
@@ -328,9 +375,10 @@ class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener
 
     override fun onResume() {
         super.onResume()
-        // ✅ NOUVEAU: Recharger discrètement à chaque retour
-        Log.d(TAG, "Fragment resumé, rafraîchissement des conversations")
+        // ✅ Recharger conversations et notifications
+        Log.d(TAG, "Fragment resumé, rafraîchissement des données")
         refreshConversationsQuietly()
+        notificationService.loadNotifications(requireContext())
     }
 
     override fun onDestroy() {

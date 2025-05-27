@@ -3,6 +3,7 @@ package com.example.supchat
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import com.example.supchat.services.NotificationService
 import com.example.supchat.socket.WebSocketService
 
 class SupChatApplication : Application() {
@@ -17,6 +18,7 @@ class SupChatApplication : Application() {
     }
 
     private var webSocketService: WebSocketService? = null
+    private var notificationService: NotificationService? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -32,8 +34,9 @@ class SupChatApplication : Application() {
         val authToken = sharedPrefs.getString("auth_token", "")
 
         if (!authToken.isNullOrEmpty()) {
-            Log.d(TAG, "Session existante trouvée, initialisation WebSocket")
+            Log.d(TAG, "Session existante trouvée, initialisation WebSocket et Notifications")
             initializeWebSocket(authToken)
+            initializeNotifications()
         } else {
             Log.d(TAG, "Aucune session existante")
         }
@@ -45,12 +48,25 @@ class SupChatApplication : Application() {
             webSocketService = WebSocketService.getInstance()
             webSocketService?.initialize(token)
 
+            // Initialiser aussi les notifications
+            initializeNotifications()
+
             // Sauvegarder le token pour les reconnexions
             val sharedPrefs = getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE)
             sharedPrefs.edit().putString("auth_token", token).apply()
 
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de l'initialisation WebSocket", e)
+        }
+    }
+
+    private fun initializeNotifications() {
+        try {
+            notificationService = NotificationService.getInstance()
+            notificationService?.loadNotifications(this)
+            Log.d(TAG, "Service de notifications initialisé")
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de l'initialisation des notifications", e)
         }
     }
 

@@ -17,6 +17,7 @@ import com.example.supchat.adapters.PrivateChatAdapter
 import com.example.supchat.api.ApiClient
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessage
+import com.example.supchat.services.NotificationService
 import com.example.supchat.socket.WebSocketService
 import retrofit2.Call
 import retrofit2.Callback
@@ -32,6 +33,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     private lateinit var connectionStatusText: TextView
     private lateinit var adapter: PrivateChatAdapter
     private lateinit var webSocketService: WebSocketService
+    private lateinit var notificationService: NotificationService
 
     private var conversationId: String = ""
     private var otherUserId: String = ""
@@ -77,15 +79,31 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             profilePicture = it.getString(ARG_PROFILE_PICTURE)
         }
 
+        // ✅ NOUVEAU: Debug des paramètres
+        Log.d(TAG, "=== PARAMÈTRES DE LA CONVERSATION ===")
+        Log.d(TAG, "conversationId: '$conversationId'")
+        Log.d(TAG, "otherUserId: '$otherUserId'")
+        Log.d(TAG, "myUserId: '$myUserId'")
+        Log.d(TAG, "username: '$username'")
+        Log.d(TAG, "=====================================")
+
         // Si myUserId n'est pas fourni en argument, le récupérer des préférences
         if (myUserId.isEmpty()) {
             myUserId = getCurrentUserId()
+            Log.d(TAG, "myUserId récupéré des préférences: '$myUserId'")
         }
 
-        // Initialiser WebSocket
+        // Vérifier que l'ID de conversation est valide
+        if (conversationId.isEmpty()) {
+            Log.e(TAG, "ERREUR: conversationId est vide !")
+        }
+
+        // Initialiser WebSocket et Notifications
         val app = requireActivity().application as SupChatApplication
         webSocketService = app.getWebSocketService() ?: WebSocketService.getInstance()
         webSocketService.addMessageListener(this)
+
+        notificationService = NotificationService.getInstance()
     }
 
     override fun onCreateView(
@@ -137,7 +155,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 showMessageOptions(message, position)
             },
             onMessageRead = { messageId ->
-                // Ne plus utiliser l'API REST, utiliser WebSocket
+                // Marquer via WebSocket
                 webSocketService.markMessageAsRead(messageId)
             }
         )
@@ -204,11 +222,27 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
 
         // Observer les nouveaux messages
         webSocketService.newPrivateMessage.observe(viewLifecycleOwner, Observer { message ->
-            Log.d(TAG, "Nouveau message reçu via WebSocket: ${message.contenu}")
+            Log.d(TAG, "Nouveau message reçu via WebSocket: ${message.contenu} de ${message.expediteur}")
+
             // Vérifier si le message concerne cette conversation
-            if (message.expediteur == otherUserId || message.conversation == otherUserId) {
+            val isFromOtherUser = message.expediteur == otherUserId
+            val isFromMe = message.expediteur == myUserId
+            val isForThisConversation = message.conversation == conversationId ||
+                    message.expediteur == otherUserId ||
+                    (isFromMe && message.conversation == otherUserId)
+
+            if (isForThisConversation) {
                 adapter.addMessage(message)
                 scrollToBottom()
+
+                // Marquer automatiquement comme lu si c'est un message reçu
+                if (isFromOtherUser) {
+                    markMessageAsReadViaAPI(message.expediteur)
+                }
+
+                Log.d(TAG, "Message ajouté à la conversation")
+            } else {
+                Log.d(TAG, "Message ignoré - ne concerne pas cette conversation")
             }
         })
 
@@ -321,29 +355,90 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             })
     }
 
+    // ✅ NOUVEAU: Méthode principale d'envoi (simplifié)
     private fun sendMessageViaWebSocket(content: String) {
-        if (!webSocketService.isConnected()) {
-            showError("Non connecté au serveur")
+        // ✅ TOUJOURS utiliser l'API REST pour l'envoi
+        Log.d(TAG, "=== ENVOI DE MESSAGE ===")
+        Log.d(TAG, "Contenu: '$content'")
+        Log.d(TAG, "Vers conversationId: '$conversationId'")
+        Log.d(TAG, "========================")
+
+        sendMessageViaAPI(content)
+    }
+
+    // ✅ MÉTHODE D'ENVOI VIA API REST (debug amélioré)
+    private fun sendMessageViaAPI(content: String) {
+        val token = getAuthToken()
+        if (token.isEmpty()) {
+            Log.e(TAG, "ERREUR: Token vide")
+            showError("Session expirée")
             return
         }
 
-        // Désactiver temporairement l'envoi
+        if (conversationId.isEmpty()) {
+            Log.e(TAG, "ERREUR: conversationId vide - impossible d'envoyer")
+            showError("Erreur: ID de conversation manquant")
+            return
+        }
+
         sendButton.isEnabled = false
         messageInput.isEnabled = false
 
-        // Envoyer via WebSocket
-        webSocketService.sendPrivateMessage(otherUserId, content)
+        Log.d(TAG, "=== ENVOI API REST ===")
+        Log.d(TAG, "URL: POST /api/v1/conversations/$conversationId/messages")
+        Log.d(TAG, "Token: ${token.take(20)}...")
+        Log.d(TAG, "Contenu: '$content'")
+        Log.d(TAG, "=====================")
 
-        // Vider le champ de saisie immédiatement
-        messageInput.text.clear()
+        ApiClient.sendConversationMessage(token, conversationId, content)
+            .enqueue(object : Callback<ConversationMessagesResponse> {
+                override fun onResponse(
+                    call: Call<ConversationMessagesResponse>,
+                    response: Response<ConversationMessagesResponse>
+                ) {
+                    if (!isAdded) return
 
-        // Réactiver après un délai court
-        messageInput.postDelayed({
-            if (isAdded) {
-                messageInput.isEnabled = true
-                sendButton.isEnabled = webSocketService.isConnected()
-            }
-        }, 500)
+                    Log.d(TAG, "=== RÉPONSE API ===")
+                    Log.d(TAG, "Code: ${response.code()}")
+                    Log.d(TAG, "Success: ${response.isSuccessful}")
+
+                    if (!response.isSuccessful) {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "Erreur body: $errorBody")
+                    }
+                    Log.d(TAG, "==================")
+
+                    sendButton.isEnabled = true
+                    messageInput.isEnabled = true
+
+                    if (response.isSuccessful) {
+                        messageInput.text.clear()
+
+                        val messagesResponse = response.body()
+                        Log.d(TAG, "Message envoyé avec succès: ${messagesResponse?.success}")
+
+                        // Recharger les messages pour voir le nouveau
+                        loadMessages()
+
+                        Log.d(TAG, "Messages rechargés après envoi")
+                    } else {
+                        Log.e(TAG, "Erreur envoi message API: ${response.code()}")
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "Détails erreur: $errorBody")
+                        Toast.makeText(context, "Erreur lors de l'envoi: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
+                    if (!isAdded) return
+
+                    sendButton.isEnabled = true
+                    messageInput.isEnabled = true
+
+                    Log.e(TAG, "Erreur réseau envoi API", t)
+                    Toast.makeText(context, "Erreur réseau: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
     }
 
     private fun scrollToBottom() {
@@ -382,8 +477,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             .setPositiveButton("Modifier") { _, _ ->
                 val newContent = input.text.toString().trim()
                 if (newContent.isNotEmpty() && newContent != message.contenu) {
-                    // Utiliser WebSocket au lieu de l'API REST
-                    webSocketService.modifyPrivateMessage(message.expediteur, newContent)
+                    editMessageViaAPI(message, newContent)
                 }
             }
             .setNegativeButton("Annuler", null)
@@ -395,11 +489,80 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             .setTitle("Supprimer le message")
             .setMessage("Êtes-vous sûr de vouloir supprimer ce message ?")
             .setPositiveButton("Supprimer") { _, _ ->
-                // Utiliser WebSocket au lieu de l'API REST
-                webSocketService.deletePrivateMessage(message.expediteur)
+                deleteMessageViaAPI(message)
             }
             .setNegativeButton("Annuler", null)
             .show()
+    }
+
+    // ✅ NOUVEAU: Modifier message via API
+    private fun editMessageViaAPI(message: ConversationMessage, newContent: String) {
+        val token = getAuthToken()
+        if (token.isEmpty()) return
+
+        // Utiliser WebSocket en premier
+        if (webSocketService.isConnected()) {
+            webSocketService.modifyPrivateMessage(message.expediteur, newContent)
+            return
+        }
+
+        // Fallback sur API REST
+        ApiClient.updateConversationMessage(token, conversationId, message.expediteur, newContent)
+            .enqueue(object : Callback<ConversationMessagesResponse> {
+                override fun onResponse(
+                    call: Call<ConversationMessagesResponse>,
+                    response: Response<ConversationMessagesResponse>
+                ) {
+                    if (!isAdded) return
+
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Message modifié", Toast.LENGTH_SHORT).show()
+                        loadMessages() // Recharger pour voir les changements
+                    } else {
+                        Toast.makeText(context, "Erreur lors de la modification", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
+                    if (!isAdded) return
+                    Toast.makeText(context, "Erreur réseau", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    // ✅ NOUVEAU: Supprimer message via API
+    private fun deleteMessageViaAPI(message: ConversationMessage) {
+        val token = getAuthToken()
+        if (token.isEmpty()) return
+
+        // Utiliser WebSocket en premier
+        if (webSocketService.isConnected()) {
+            webSocketService.deletePrivateMessage(message.expediteur)
+            return
+        }
+
+        // Fallback sur API REST
+        ApiClient.deleteConversationMessage(token, conversationId, message.expediteur)
+            .enqueue(object : Callback<ConversationMessagesResponse> {
+                override fun onResponse(
+                    call: Call<ConversationMessagesResponse>,
+                    response: Response<ConversationMessagesResponse>
+                ) {
+                    if (!isAdded) return
+
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Message supprimé", Toast.LENGTH_SHORT).show()
+                        loadMessages() // Recharger pour voir les changements
+                    } else {
+                        Toast.makeText(context, "Erreur lors de la suppression", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
+                    if (!isAdded) return
+                    Toast.makeText(context, "Erreur réseau", Toast.LENGTH_SHORT).show()
+                }
+            })
     }
 
     private fun replyToMessage(message: ConversationMessage) {
@@ -463,6 +626,42 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         // Déjà géré par les LiveData observers
     }
 
+    // ✅ NOUVEAU: Marquer message comme lu via API
+    private fun markMessageAsReadViaAPI(messageId: String) {
+        val token = getAuthToken()
+        if (token.isEmpty()) return
+
+        // Utiliser WebSocket en premier
+        if (webSocketService.isConnected()) {
+            webSocketService.markMessageAsRead(messageId)
+            return
+        }
+
+        // Fallback sur API REST
+        ApiClient.markConversationMessageAsRead(token, conversationId, messageId)
+            .enqueue(object : Callback<ConversationMessagesResponse> {
+                override fun onResponse(
+                    call: Call<ConversationMessagesResponse>,
+                    response: Response<ConversationMessagesResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        Log.d(TAG, "Message $messageId marqué comme lu via API")
+                    }
+                }
+
+                override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
+                    Log.e(TAG, "Erreur marquage lecture via API", t)
+                }
+            })
+    }
+
+    private fun markUnreadMessagesAsRead() {
+        // ✅ NOUVEAU: Marquer les notifications comme lues
+        notificationService.markPrivateConversationAsRead(requireContext(), conversationId)
+
+        Log.d(TAG, "Notifications marquées comme lues pour conversation: $conversationId")
+    }
+
     override fun onResume() {
         super.onResume()
         // Assurer que WebSocket est connecté
@@ -470,6 +669,15 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         if (token.isNotEmpty() && !webSocketService.isConnected()) {
             webSocketService.initialize(token)
         }
+
+        // ✅ NOUVEAU: Marquer les messages comme lus quand on entre dans la conversation
+        markUnreadMessagesAsRead()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // ✅ NOUVEAU: Marquer comme lu quand on quitte la conversation
+        markUnreadMessagesAsRead()
     }
 
     override fun onDestroy() {

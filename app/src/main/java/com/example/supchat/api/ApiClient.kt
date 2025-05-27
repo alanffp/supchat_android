@@ -13,6 +13,7 @@ import com.example.supchat.models.request.privatemessage.PrivateMessageRequest
 import com.example.supchat.models.request.ProfileUpdateRequest
 import com.example.supchat.models.request.ProfileUpdateResponse
 import com.example.supchat.models.request.Message.ReponseRequest
+import com.example.supchat.models.request.SendConversationMessageRequest
 import com.example.supchat.models.request.StatusResponse
 import com.example.supchat.models.request.StatusUpdateRequest
 import com.example.supchat.models.request.ThemeUpdateRequest
@@ -32,6 +33,7 @@ import com.example.supchat.models.response.UserSearchResponse
 import com.example.supchat.models.response.WorkspacesResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
+import com.example.supchat.models.response.notifications.NotificationsResponse
 import com.google.gson.GsonBuilder
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -106,12 +108,22 @@ object ApiClient {
         return instance.getCanauxForWorkspace("Bearer $token", workspaceId)
     }
 
-    fun createWorkspace(token: String, name: String, description: String? = null, visibilite: String = "public"): Call<WorkspacesResponse> {
+    fun createWorkspace(
+        token: String,
+        name: String,
+        description: String? = null,
+        visibilite: String = "public"
+    ): Call<WorkspacesResponse> {
         val workspaceRequest = WorkspaceCreateRequest(name, description, visibilite)
         return instance.createWorkspace("Bearer $token", workspaceRequest)
     }
 
-    fun updateWorkspace(token: String, workspaceId: String, name: String? = null, description: String? = null): Call<WorkspacesResponse> {
+    fun updateWorkspace(
+        token: String,
+        workspaceId: String,
+        name: String? = null,
+        description: String? = null
+    ): Call<WorkspacesResponse> {
         val workspaceRequest = WorkspaceUpdateRequest(name, description)
         return instance.updateWorkspace("Bearer $token", workspaceId, workspaceRequest)
     }
@@ -120,16 +132,29 @@ object ApiClient {
         return instance.deleteWorkspace("Bearer $token", workspaceId)
     }
 
-    fun addWorkspaceMember(token: String, workspaceId: String, userId: String): Call<WorkspacesResponse> {
+    fun addWorkspaceMember(
+        token: String,
+        workspaceId: String,
+        userId: String
+    ): Call<WorkspacesResponse> {
         val addMemberRequest = WorkspaceAddMemberRequest(userId)
         return instance.addWorkspaceMember("Bearer $token", workspaceId, addMemberRequest)
     }
 
-    fun removeWorkspaceMember(token: String, workspaceId: String, membreId: String): Call<WorkspacesResponse> {
+    fun removeWorkspaceMember(
+        token: String,
+        workspaceId: String,
+        membreId: String
+    ): Call<WorkspacesResponse> {
         return instance.removeWorkspaceMember("Bearer $token", workspaceId, membreId)
     }
 
-    fun updateMemberRole(token: String, workspaceId: String, membreId: String, role: String): Call<WorkspacesResponse> {
+    fun updateMemberRole(
+        token: String,
+        workspaceId: String,
+        membreId: String,
+        role: String
+    ): Call<WorkspacesResponse> {
         val roleUpdateRequest = MemberRoleUpdateRequest(role)
         return instance.updateMemberRole("Bearer $token", workspaceId, membreId, roleUpdateRequest)
     }
@@ -142,11 +167,19 @@ object ApiClient {
         return instance.getWorkspaceInvitations("Bearer $token", workspaceId)
     }
 
-    fun revokeInvitation(token: String, workspaceId: String, invitationToken: String): Call<WorkspacesResponse> {
+    fun revokeInvitation(
+        token: String,
+        workspaceId: String,
+        invitationToken: String
+    ): Call<WorkspacesResponse> {
         return instance.revokeInvitation("Bearer $token", workspaceId, invitationToken)
     }
 
-    fun inviteUserByEmail(token: String, workspaceId: String, userId: String): Call<WorkspacesResponse> {
+    fun inviteUserByEmail(
+        token: String,
+        workspaceId: String,
+        userId: String
+    ): Call<WorkspacesResponse> {
         return instance.inviteUserByEmail("Bearer $token", workspaceId, userId)
     }
 
@@ -163,45 +196,130 @@ object ApiClient {
     }
 
     // === MESSAGES (CANAUX) ===
-    fun getMessagesFromCanal(token: String, workspaceId: String, canalId: String): Call<MessagesResponse> {
+    fun getMessagesFromCanal(
+        token: String,
+        workspaceId: String,
+        canalId: String
+    ): Call<MessagesResponse> {
         return instance.getMessagesFromCanal("Bearer $token", workspaceId, canalId)
     }
 
-    fun sendMessage(token: String, workspaceId: String, canalId: String, messageContent: String): Call<MessagesResponse> {
+    fun sendMessage(
+        token: String,
+        workspaceId: String,
+        canalId: String,
+        messageContent: String
+    ): Call<MessagesResponse> {
         val messageRequest = MessageRequest(messageContent)
         return instance.sendMessage("Bearer $token", workspaceId, canalId, messageRequest)
     }
 
-    fun updateMessage(token: String, workspaceId: String, canalId: String, messageId: String, newContent: String): Call<MessagesResponse> {
+    fun updateMessage(
+        token: String,
+        workspaceId: String,
+        canalId: String,
+        messageId: String,
+        newContent: String
+    ): Call<MessagesResponse> {
         val messageRequest = MessageRequest(newContent)
-        return instance.updateMessage("Bearer $token", workspaceId, canalId, messageId, messageRequest)
+        return instance.updateMessage(
+            "Bearer $token",
+            workspaceId,
+            canalId,
+            messageId,
+            messageRequest
+        )
     }
 
-    fun deleteMessage(token: String, workspaceId: String, canalId: String, messageId: String): Call<MessagesResponse> {
+    fun deleteMessage(
+        token: String,
+        workspaceId: String,
+        canalId: String,
+        messageId: String
+    ): Call<MessagesResponse> {
         return instance.deleteMessage("Bearer $token", workspaceId, canalId, messageId)
     }
 
-    fun addReaction(token: String, workspaceId: String, canalId: String, messageId: String, emoji: String): Call<MessagesResponse> {
+    fun addReaction(
+        token: String,
+        workspaceId: String,
+        canalId: String,
+        messageId: String,
+        emoji: String
+    ): Call<MessagesResponse> {
         val reactionRequest = ReactionRequest(emoji)
-        return instance.addReaction("Bearer $token", workspaceId, canalId, messageId, reactionRequest)
+        return instance.addReaction(
+            "Bearer $token",
+            workspaceId,
+            canalId,
+            messageId,
+            reactionRequest
+        )
     }
 
-    fun replyToMessage(token: String, workspaceId: String, canalId: String, messageId: String, content: String): Call<MessagesResponse> {
+    fun replyToMessage(
+        token: String,
+        workspaceId: String,
+        canalId: String,
+        messageId: String,
+        content: String
+    ): Call<MessagesResponse> {
         val reponseRequest = ReponseRequest(content)
-        return instance.replyToMessage("Bearer $token", workspaceId, canalId, messageId, reponseRequest)
+        return instance.replyToMessage(
+            "Bearer $token",
+            workspaceId,
+            canalId,
+            messageId,
+            reponseRequest
+        )
     }
 
     // === CONVERSATIONS ===
-    fun getConversationMessages(token: String, conversationId: String): Call<ConversationMessagesResponse> {
+    fun getConversationMessages(
+        token: String,
+        conversationId: String
+    ): Call<ConversationMessagesResponse> {
         return instance.getConversationMessages("Bearer $token", conversationId)
     }
 
-    fun sendConversationMessage(token: String, conversationId: String, content: String): Call<ConversationMessagesResponse> {
-        val messageRequest = PrivateMessageRequest(content)
-        return instance.sendConversationMessage("Bearer $token", conversationId, messageRequest)
+    fun sendConversationMessage(
+        token: String,
+        conversationId: String,
+        contenu: String,
+        reponseA: String? = null
+    ): Call<ConversationMessagesResponse> {
+        val request = SendConversationMessageRequest(contenu, reponseA)
+        return instance.sendConversationMessage("Bearer $token", conversationId, request)
     }
 
-    fun markConversationMessageAsRead(token: String, conversationId: String, messageId: String): Call<ConversationMessagesResponse> {
+    fun updateConversationMessage(
+        token: String,
+        conversationId: String,
+        messageId: String,
+        contenu: String
+    ): Call<ConversationMessagesResponse> {
+        val request = SendConversationMessageRequest(contenu)
+        return instance.updateConversationMessage(
+            "Bearer $token",
+            conversationId,
+            messageId,
+            request
+        )
+    }
+
+    fun deleteConversationMessage(
+        token: String,
+        conversationId: String,
+        messageId: String
+    ): Call<ConversationMessagesResponse> {
+        return instance.deleteConversationMessage("Bearer $token", conversationId, messageId)
+    }
+
+    fun markConversationMessageAsRead(
+        token: String,
+        conversationId: String,
+        messageId: String
+    ): Call<ConversationMessagesResponse> {
         return instance.markConversationMessageAsRead("Bearer $token", conversationId, messageId)
     }
 
@@ -210,12 +328,19 @@ object ApiClient {
         return instance.getPrivateMessages("Bearer $token")
     }
 
-    fun sendPrivateMessage(token: String, userId: String, content: String): Call<ConversationMessagesResponse> {
+    fun sendPrivateMessage(
+        token: String,
+        userId: String,
+        content: String
+    ): Call<ConversationMessagesResponse> {
         val messageRequest = PrivateMessageRequest(content)
         return instance.sendPrivateMessage("Bearer $token", userId, messageRequest)
     }
 
-    fun getPrivateMessagesWithUser(token: String, userId: String): Call<ConversationMessagesResponse> {
+    fun getPrivateMessagesWithUser(
+        token: String,
+        userId: String
+    ): Call<ConversationMessagesResponse> {
         return instance.getPrivateMessagesWithUser("Bearer $token", userId)
     }
 
@@ -223,7 +348,11 @@ object ApiClient {
         return instance.markMessageAsRead("Bearer $token", messageId)
     }
 
-    fun updatePrivateMessage(token: String, messageId: String, content: String): Call<ConversationMessagesResponse> {
+    fun updatePrivateMessage(
+        token: String,
+        messageId: String,
+        content: String
+    ): Call<ConversationMessagesResponse> {
         val messageRequest = PrivateMessageRequest(content)
         return instance.updatePrivateMessage("Bearer $token", messageId, messageRequest)
     }
@@ -232,7 +361,10 @@ object ApiClient {
         return instance.deletePrivateMessage("Bearer $token", messageId)
     }
 
-    fun getConversationFiles(token: String, conversationId: String): Call<ConversationMessagesResponse> {
+    fun getConversationFiles(
+        token: String,
+        conversationId: String
+    ): Call<ConversationMessagesResponse> {
         return instance.getConversationFiles("Bearer $token", conversationId)
     }
 
@@ -251,19 +383,30 @@ object ApiClient {
         return instance.updateUserStatus("Bearer $token", statusUpdateRequest)
     }
 
-    fun updateUserProfile(token: String, username: String? = null, email: String? = null): Call<ProfileUpdateResponse> {
+    fun updateUserProfile(
+        token: String,
+        username: String? = null,
+        email: String? = null
+    ): Call<ProfileUpdateResponse> {
         val profileUpdateRequest = ProfileUpdateRequest(username, email)
         return instance.updateUserProfile("Bearer $token", profileUpdateRequest)
     }
 
-    fun updateUserPassword(token: String, currentPassword: String, newPassword: String, confirmPassword: String): Call<PasswordUpdateResponse> {
-        val passwordUpdateRequest = PasswordUpdateRequest(currentPassword, newPassword, confirmPassword)
+    fun updateUserPassword(
+        token: String,
+        currentPassword: String,
+        newPassword: String,
+        confirmPassword: String
+    ): Call<PasswordUpdateResponse> {
+        val passwordUpdateRequest =
+            PasswordUpdateRequest(currentPassword, newPassword, confirmPassword)
         return instance.updateUserPassword("Bearer $token", passwordUpdateRequest)
     }
 
     fun updateProfilePicture(token: String, imageFile: File): Call<PictureUpdateResponse> {
         val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-        val imagePart = MultipartBody.Part.createFormData("profilePicture", imageFile.name, requestFile)
+        val imagePart =
+            MultipartBody.Part.createFormData("profilePicture", imageFile.name, requestFile)
         return instance.updateProfilePicture("Bearer $token", imagePart)
     }
 
@@ -278,5 +421,18 @@ object ApiClient {
 
     fun deconnexion(token: String): Call<DeconnexionResponse> {
         return instance.deconnexion("Bearer $token")
+    }
+
+    fun getNotifications(token: String): Call<NotificationsResponse> {
+        return instance.getNotifications("Bearer $token")
+    }
+
+    fun markNotificationAsRead(token: String, notificationId: String): Call<NotificationsResponse> {
+        return instance.markNotificationAsRead("Bearer $token", notificationId)
+    }
+
+    fun markAllNotificationsAsRead(token: String): Call<NotificationsResponse> {
+        return instance.markAllNotificationsAsRead("Bearer $token")
+
     }
 }

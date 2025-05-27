@@ -13,6 +13,7 @@ import com.example.supchat.models.request.privatemessage.PrivateMessageRequest
 import com.example.supchat.models.request.ProfileUpdateRequest
 import com.example.supchat.models.request.ProfileUpdateResponse
 import com.example.supchat.models.request.Message.ReponseRequest
+import com.example.supchat.models.request.SendConversationMessageRequest
 import com.example.supchat.models.request.StatusResponse
 import com.example.supchat.models.request.StatusUpdateRequest
 import com.example.supchat.models.request.ThemeUpdateRequest
@@ -33,6 +34,7 @@ import com.example.supchat.models.response.UserSearchResponse
 import com.example.supchat.models.response.WorkspacesResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
+import com.example.supchat.models.response.notifications.NotificationsResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.Body
@@ -338,22 +340,22 @@ interface ApiService {
     fun sendConversationMessage(
         @Header("Authorization") token: String,
         @Path("id") conversationId: String,
-        @Body message: PrivateMessageRequest
+        @Body request: SendConversationMessageRequest
     ): Call<ConversationMessagesResponse>
 
-    @PATCH("/api/v1/conversations/{id}/messages/{messageId}/read")
+    @POST("/api/v1/conversations/{id}/messages/{messageId}/read")
     fun markConversationMessageAsRead(
         @Header("Authorization") token: String,
         @Path("id") conversationId: String,
         @Path("messageId") messageId: String
     ): Call<ConversationMessagesResponse>
 
-    @PATCH("/api/v1/conversations/{id}/messages/{messageId}")
+    @PUT("/api/v1/conversations/{id}/messages/{messageId}")
     fun updateConversationMessage(
         @Header("Authorization") token: String,
         @Path("id") conversationId: String,
         @Path("messageId") messageId: String,
-        @Body message: PrivateMessageRequest
+        @Body request: SendConversationMessageRequest
     ): Call<ConversationMessagesResponse>
 
     @DELETE("/api/v1/conversations/{id}/messages/{messageId}")
@@ -362,5 +364,21 @@ interface ApiService {
         @Path("id") conversationId: String,
         @Path("messageId") messageId: String
     ): Call<ConversationMessagesResponse>
+
+    @GET("/api/notifications")
+    fun getNotifications(
+        @Header("Authorization") token: String
+    ): Call<NotificationsResponse>
+
+    @PUT("/api/notifications/{id}/read")
+    fun markNotificationAsRead(
+        @Header("Authorization") token: String,
+        @Path("id") notificationId: String
+    ): Call<NotificationsResponse>
+
+    @PUT("/api/notifications/read-all")
+    fun markAllNotificationsAsRead(
+        @Header("Authorization") token: String
+    ): Call<NotificationsResponse>
 }
 

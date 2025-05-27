@@ -13,10 +13,11 @@
     <color name="colorError">#FF5252</color>
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#14324F</color>
     <color name="darkGray">#202225</color>
     <color name="mediumGray">#2F3136</color>
     <color name="lightGray">#EAEAEA</color>
+    <color name="DarkBlue">#06121E</color>
 
     <!-- Couleurs pour WebSocket status -->
     <color name="websocket_online">#4CAF50</color>

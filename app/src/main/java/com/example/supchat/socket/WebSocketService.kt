@@ -1,5 +1,6 @@
 package com.example.supchat.socket
 
+import android.R.attr.tag
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -50,8 +51,12 @@ class WebSocketService private constructor() {
     private val _messageSent = MutableLiveData<String>()
     val messageSent: LiveData<String> = _messageSent
 
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
+    // ✅ NOUVEAU: LiveData pour les notifications
+    private val _newNotification = MutableLiveData<org.json.JSONObject>()
+    val newNotification: LiveData<org.json.JSONObject> = _newNotification
+
+    private val _notificationRead = MutableLiveData<String>()
+    val notificationRead: LiveData<String> = _notificationRead
 
     // Callbacks pour les événements (gardé pour la compatibilité)
     private val messageListeners = mutableListOf<MessageListener>()
@@ -64,7 +69,14 @@ class WebSocketService private constructor() {
         fun onPrivateMessageDeleted(messageId: String)
         fun onError(error: String)
         fun onConnectionChanged(isConnected: Boolean)
+
+        // ✅ NOUVEAU: Méthodes pour les notifications
+        fun onNewNotification(notification: JSONObject) {}
+        fun onNotificationRead(notificationId: String) {}
     }
+
+    private val _error = MutableLiveData<String>()
+    val error: LiveData<String> = _error
 
     fun initialize(token: String) {
         this.authToken = token
@@ -192,6 +204,34 @@ class WebSocketService private constructor() {
                         messageListeners.forEach { it.onPrivateMessageDeleted(messageId) }
                     } catch (e: Exception) {
                         Log.e(TAG, "Erreur parsing message supprimé", e)
+                    }
+                }
+            }
+
+            // ✅ NOUVEAU: Événements de notifications
+            on("nouvelle-notification") { args ->
+                Log.d(tag.toString(), "Nouvelle notification reçue")
+                if (args.isNotEmpty()) {
+                    try {
+                        val notificationData = args[0] as JSONObject
+                        _newNotification.postValue(notificationData)
+                        messageListeners.forEach { it.onNewNotification(notificationData) }
+                    } catch (e: Exception) {
+                        Log.e(tag.toString(), "Erreur parsing nouvelle notification", e)
+                    }
+                }
+            }
+
+            on("notification-lue") { args ->
+                Log.d(tag.toString(), "Notification marquée comme lue")
+                if (args.isNotEmpty()) {
+                    try {
+                        val data = args[0] as JSONObject
+                        val notificationId = data.getString("notificationId")
+                        _notificationRead.postValue(notificationId)
+                        messageListeners.forEach { it.onNotificationRead(notificationId) }
+                    } catch (e: Exception) {
+                        Log.e(tag.toString(), "Erreur parsing notification lue", e)
                     }
                 }
             }
