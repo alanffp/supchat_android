@@ -9,24 +9,32 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.supchat.R
+import com.example.supchat.SupChatApplication
 import com.example.supchat.adapters.PrivateMessagesAdapter
 import com.example.supchat.api.ApiClient
 import com.example.supchat.models.response.messageprivate.PrivateMessageItem
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
+import com.example.supchat.socket.WebSocketService
 import com.example.supchat.ui.chat.PrivateConversationFragment
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class PrivateMessagesListFragment : Fragment() {
+class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyTextView: TextView
     private lateinit var messagesAdapter: PrivateMessagesAdapter
+
+    // ✅ NOUVEAU: WebSocket
+    private lateinit var webSocketService: WebSocketService
+    private var conversations = mutableListOf<PrivateMessageItem>()
 
     companion object {
         private const val TAG = "PrivateMessagesList"
@@ -34,6 +42,17 @@ class PrivateMessagesListFragment : Fragment() {
         fun newInstance(): PrivateMessagesListFragment {
             return PrivateMessagesListFragment()
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // ✅ NOUVEAU: Initialiser WebSocket listener
+        val app = requireActivity().application as SupChatApplication
+        webSocketService = app.getWebSocketService() ?: WebSocketService.getInstance()
+        webSocketService.addMessageListener(this)
+
+        Log.d(TAG, "WebSocket listener ajouté")
     }
 
     override fun onCreateView(
@@ -48,9 +67,116 @@ class PrivateMessagesListFragment : Fragment() {
         emptyTextView = view.findViewById(R.id.empty_conversations_text)
 
         setupRecyclerView()
+        setupWebSocketObservers() // ✅ NOUVEAU
         loadPrivateMessages()
 
         return view
+    }
+
+    // ✅ NOUVEAU: Observer les événements WebSocket en temps réel
+    private fun setupWebSocketObservers() {
+        // Observer les nouveaux messages privés
+        webSocketService.newPrivateMessage.observe(viewLifecycleOwner, Observer { message ->
+            Log.d(TAG, "Nouveau message WebSocket reçu: de ${message.expediteur}")
+
+            // Mettre à jour la liste des conversations
+            updateConversationWithNewMessage(message.expediteur, message.contenu, message.horodatage)
+        })
+
+        // Observer les messages lus
+        webSocketService.messageRead.observe(viewLifecycleOwner, Observer { messageId ->
+            Log.d(TAG, "Message marqué comme lu: $messageId")
+
+            // Recharger les conversations pour mettre à jour les compteurs
+            refreshConversationsQuietly()
+        })
+
+        // Observer les messages envoyés (pour mise à jour immédiate)
+        webSocketService.messageSent.observe(viewLifecycleOwner, Observer { messageId ->
+            Log.d(TAG, "Message envoyé confirmé: $messageId")
+
+            // Optionnel: recharger pour s'assurer de la cohérence
+            refreshConversationsQuietly()
+        })
+    }
+
+    // ✅ NOUVEAU: Mettre à jour une conversation avec un nouveau message
+    private fun updateConversationWithNewMessage(senderId: String, content: String, timestamp: String) {
+        val currentUserId = getCurrentUserId()
+
+        // Trouver la conversation existante
+        val existingConversationIndex = conversations.indexOfFirst {
+            it.user.id == senderId
+        }
+
+        if (existingConversationIndex != -1) {
+            // Mettre à jour la conversation existante
+            val conversation = conversations[existingConversationIndex]
+
+            // Mettre à jour le dernier message
+            val updatedLastMessage = conversation.lastMessage.copy(
+                contenu = content,
+                horodatage = timestamp,
+                isFromMe = senderId == currentUserId
+            )
+
+            // Incrémenter le compteur si ce n'est pas de nous
+            val updatedUnreadCount = if (senderId != currentUserId) {
+                conversation.unreadCount + 1
+            } else {
+                conversation.unreadCount
+            }
+
+            val updatedConversation = conversation.copy(
+                lastMessage = updatedLastMessage,
+                unreadCount = updatedUnreadCount
+            )
+
+            // Remplacer et déplacer en haut
+            conversations.removeAt(existingConversationIndex)
+            conversations.add(0, updatedConversation)
+
+            // Notifier l'adapter
+            messagesAdapter.updateConversations(conversations)
+
+            Log.d(TAG, "Conversation mise à jour: ${conversation.user.username}, nouveaux non lus: $updatedUnreadCount")
+
+        } else {
+            // Nouvelle conversation - recharger complètement
+            Log.d(TAG, "Nouvelle conversation détectée, rechargement complet")
+            loadPrivateMessages()
+        }
+    }
+
+    // ✅ NOUVEAU: Recharger discrètement sans spinner
+    private fun refreshConversationsQuietly() {
+        val token = getAuthToken()
+        if (token.isEmpty()) return
+
+        ApiClient.getPrivateMessages(token).enqueue(object : Callback<PrivateMessagesResponse> {
+            override fun onResponse(
+                call: Call<PrivateMessagesResponse>,
+                response: Response<PrivateMessagesResponse>
+            ) {
+                if (!isAdded) return
+
+                if (response.isSuccessful) {
+                    val privateMessagesResponse = response.body()
+                    val newConversations = privateMessagesResponse?.data ?: emptyList()
+
+                    // Mettre à jour sans changer la visibilité
+                    conversations.clear()
+                    conversations.addAll(newConversations)
+                    messagesAdapter.updateConversations(conversations)
+
+                    Log.d(TAG, "Conversations mises à jour discrètement: ${conversations.size}")
+                }
+            }
+
+            override fun onFailure(call: Call<PrivateMessagesResponse>, t: Throwable) {
+                Log.e(TAG, "Erreur lors du rafraîchissement discret", t)
+            }
+        })
     }
 
     private fun setupRecyclerView() {
@@ -92,8 +218,12 @@ class PrivateMessagesListFragment : Fragment() {
                     val privateMessagesResponse = response.body()
                     Log.d(TAG, "Réponse reçue: $privateMessagesResponse")
 
-                    val conversations = privateMessagesResponse?.data ?: emptyList()
-                    Log.d(TAG, "Nombre de conversations: ${conversations.size}")
+                    val newConversations = privateMessagesResponse?.data ?: emptyList()
+                    Log.d(TAG, "Nombre de conversations: ${newConversations.size}")
+
+                    // ✅ NOUVEAU: Sauvegarder dans la liste locale
+                    conversations.clear()
+                    conversations.addAll(newConversations)
 
                     updateUI(conversations)
                 } else {
@@ -162,8 +292,51 @@ class PrivateMessagesListFragment : Fragment() {
             .getString("auth_token", "") ?: ""
     }
 
+    // ✅ NOUVEAU: Callbacks WebSocket
+    override fun onNewPrivateMessage(message: JSONObject) {
+        // Déjà géré par les LiveData observers
+        Log.d(TAG, "Callback WebSocket: nouveau message privé")
+    }
+
+    override fun onPrivateMessageSent(messageId: String) {
+        // Déjà géré par les LiveData observers
+        Log.d(TAG, "Callback WebSocket: message envoyé")
+    }
+
+    override fun onPrivateMessageRead(messageId: String) {
+        // Déjà géré par les LiveData observers
+        Log.d(TAG, "Callback WebSocket: message lu")
+    }
+
+    override fun onPrivateMessageModified(message: JSONObject) {
+        Log.d(TAG, "Callback WebSocket: message modifié")
+        refreshConversationsQuietly()
+    }
+
+    override fun onPrivateMessageDeleted(messageId: String) {
+        Log.d(TAG, "Callback WebSocket: message supprimé")
+        refreshConversationsQuietly()
+    }
+
+    override fun onError(error: String) {
+        Log.e(TAG, "Erreur WebSocket: $error")
+    }
+
+    override fun onConnectionChanged(isConnected: Boolean) {
+        Log.d(TAG, "Statut connexion WebSocket: $isConnected")
+    }
+
     override fun onResume() {
         super.onResume()
-        loadPrivateMessages()
+        // ✅ NOUVEAU: Recharger discrètement à chaque retour
+        Log.d(TAG, "Fragment resumé, rafraîchissement des conversations")
+        refreshConversationsQuietly()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // ✅ NOUVEAU: Supprimer le listener WebSocket
+        webSocketService.removeMessageListener(this)
+        Log.d(TAG, "WebSocket listener supprimé")
     }
 }

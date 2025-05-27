@@ -8,24 +8,30 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.supchat.R
+import com.example.supchat.SupChatApplication
 import com.example.supchat.adapters.PrivateChatAdapter
 import com.example.supchat.api.ApiClient
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessage
+import com.example.supchat.socket.WebSocketService
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class PrivateConversationFragment : Fragment() {
+class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var messageInput: EditText
     private lateinit var sendButton: ImageButton
     private lateinit var progressBar: ProgressBar
+    private lateinit var connectionIndicator: View
+    private lateinit var connectionStatusText: TextView
     private lateinit var adapter: PrivateChatAdapter
+    private lateinit var webSocketService: WebSocketService
 
     private var conversationId: String = ""
     private var otherUserId: String = ""
@@ -70,6 +76,16 @@ class PrivateConversationFragment : Fragment() {
             myUserId = it.getString(ARG_MY_USER_ID, "")
             profilePicture = it.getString(ARG_PROFILE_PICTURE)
         }
+
+        // Si myUserId n'est pas fourni en argument, le récupérer des préférences
+        if (myUserId.isEmpty()) {
+            myUserId = getCurrentUserId()
+        }
+
+        // Initialiser WebSocket
+        val app = requireActivity().application as SupChatApplication
+        webSocketService = app.getWebSocketService() ?: WebSocketService.getInstance()
+        webSocketService.addMessageListener(this)
     }
 
     override fun onCreateView(
@@ -82,6 +98,7 @@ class PrivateConversationFragment : Fragment() {
         initViews(view)
         setupRecyclerView()
         setupSendButton()
+        setupWebSocketObservers()
         loadMessages()
 
         return view
@@ -93,12 +110,22 @@ class PrivateConversationFragment : Fragment() {
         sendButton = view.findViewById(R.id.send_button)
         progressBar = view.findViewById(R.id.messages_progress_bar)
 
+        connectionIndicator = view.findViewById(R.id.connection_indicator)
+        connectionStatusText = view.findViewById(R.id.connection_status_text)
+
         val usernameTextView: TextView = view.findViewById(R.id.username_text)
         usernameTextView.text = username
 
         val backButton: ImageButton = view.findViewById(R.id.back_button)
         backButton.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
+        }
+
+        // Charger l'image de profil si disponible
+        val profileImageView: de.hdodenhof.circleimageview.CircleImageView = view.findViewById(R.id.user_profile_image)
+        if (!profilePicture.isNullOrEmpty()) {
+            // Utiliser Glide pour charger l'image (si vous l'avez)
+            // Glide.with(this).load("http://10.0.2.2:3000/uploads/profile-pictures/$profilePicture").into(profileImageView)
         }
     }
 
@@ -110,7 +137,8 @@ class PrivateConversationFragment : Fragment() {
                 showMessageOptions(message, position)
             },
             onMessageRead = { messageId ->
-                markMessageAsRead(messageId)
+                // Ne plus utiliser l'API REST, utiliser WebSocket
+                webSocketService.markMessageAsRead(messageId)
             }
         )
 
@@ -126,8 +154,113 @@ class PrivateConversationFragment : Fragment() {
         sendButton.setOnClickListener {
             val messageText = messageInput.text.toString().trim()
             if (messageText.isNotEmpty()) {
-                sendMessage(messageText)
+                sendMessageViaWebSocket(messageText)
             }
+        }
+
+        // Gérer l'envoi avec la touche Entrée
+        messageInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
+                val messageText = messageInput.text.toString().trim()
+                if (messageText.isNotEmpty()) {
+                    sendMessageViaWebSocket(messageText)
+                }
+                true
+            } else {
+                false
+            }
+        }
+
+        // Activer/désactiver le bouton selon le contenu
+        messageInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val hasText = !s.isNullOrBlank()
+                sendButton.isEnabled = hasText && webSocketService.isConnected()
+                sendButton.alpha = if (sendButton.isEnabled) 1.0f else 0.5f
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+    }
+
+    private fun setupWebSocketObservers() {
+        // Observer le statut de connexion
+        webSocketService.connectionStatus.observe(viewLifecycleOwner, Observer { isConnected ->
+            Log.d(TAG, "Statut connexion WebSocket: $isConnected")
+            updateConnectionIndicator(isConnected)
+
+            // Activer/désactiver le bouton d'envoi
+            val hasText = messageInput.text.toString().trim().isNotEmpty()
+            sendButton.isEnabled = isConnected && hasText
+            sendButton.alpha = if (sendButton.isEnabled) 1.0f else 0.5f
+
+            // Mettre à jour le placeholder du champ de texte
+            messageInput.hint = if (isConnected) {
+                "Écrivez un message..."
+            } else {
+                "Reconnexion en cours..."
+            }
+        })
+
+        // Observer les nouveaux messages
+        webSocketService.newPrivateMessage.observe(viewLifecycleOwner, Observer { message ->
+            Log.d(TAG, "Nouveau message reçu via WebSocket: ${message.contenu}")
+            // Vérifier si le message concerne cette conversation
+            if (message.expediteur == otherUserId || message.conversation == otherUserId) {
+                adapter.addMessage(message)
+                scrollToBottom()
+            }
+        })
+
+        // Observer les messages lus
+        webSocketService.messageRead.observe(viewLifecycleOwner, Observer { messageId ->
+            Log.d(TAG, "Message marqué comme lu: $messageId")
+            // Mettre à jour l'affichage si nécessaire
+            adapter.notifyDataSetChanged()
+        })
+
+        // Observer les messages modifiés
+        webSocketService.messageModified.observe(viewLifecycleOwner, Observer { message ->
+            Log.d(TAG, "Message modifié: ${message.contenu}")
+            // Recharger les messages pour afficher la modification
+            loadMessages()
+        })
+
+        // Observer les messages supprimés
+        webSocketService.messageDeleted.observe(viewLifecycleOwner, Observer { messageId ->
+            Log.d(TAG, "Message supprimé: $messageId")
+            // Recharger les messages
+            loadMessages()
+        })
+
+        // Observer les confirmations d'envoi
+        webSocketService.messageSent.observe(viewLifecycleOwner, Observer { messageId ->
+            Log.d(TAG, "Message envoyé avec succès: $messageId")
+            // Optionnel : afficher une confirmation
+        })
+
+        // Observer les erreurs
+        webSocketService.error.observe(viewLifecycleOwner, Observer { error ->
+            Log.e(TAG, "Erreur WebSocket: $error")
+            showError(error)
+        })
+    }
+
+    private fun updateConnectionIndicator(isConnected: Boolean) {
+        if (isConnected) {
+            connectionIndicator.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor("#4CAF50") // Vert
+                )
+            connectionStatusText.text = "En ligne"
+            connectionStatusText.setTextColor(android.graphics.Color.parseColor("#CCFFFFFF"))
+        } else {
+            connectionIndicator.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(
+                    android.graphics.Color.parseColor("#F44336") // Rouge
+                )
+            connectionStatusText.text = "Hors ligne"
+            connectionStatusText.setTextColor(android.graphics.Color.parseColor("#88FFFFFF"))
         }
     }
 
@@ -162,7 +295,6 @@ class PrivateConversationFragment : Fragment() {
                         val messagesResponse = response.body()
                         Log.d(TAG, "Réponse reçue: $messagesResponse")
 
-                        // ✅ CORRECTION : data est déjà la liste de messages
                         val messages = messagesResponse?.data ?: emptyList()
                         Log.d(TAG, "Nombre de messages: ${messages.size}")
 
@@ -172,7 +304,7 @@ class PrivateConversationFragment : Fragment() {
                         } else {
                             recyclerView.visibility = View.VISIBLE
                             adapter.updateMessages(messages)
-                            recyclerView.scrollToPosition(messages.size - 1)
+                            scrollToBottom()
                         }
                     } else {
                         Log.e(TAG, "Erreur API: ${response.code()}")
@@ -189,62 +321,43 @@ class PrivateConversationFragment : Fragment() {
             })
     }
 
-    private fun sendMessage(content: String) {
-        val token = getAuthToken()
-        if (token.isEmpty()) return
+    private fun sendMessageViaWebSocket(content: String) {
+        if (!webSocketService.isConnected()) {
+            showError("Non connecté au serveur")
+            return
+        }
 
+        // Désactiver temporairement l'envoi
         sendButton.isEnabled = false
         messageInput.isEnabled = false
 
-        ApiClient.sendConversationMessage(token, conversationId, content)
-            .enqueue(object : Callback<ConversationMessagesResponse> {
-                override fun onResponse(
-                    call: Call<ConversationMessagesResponse>,
-                    response: Response<ConversationMessagesResponse>
-                ) {
-                    if (!isAdded) return
+        // Envoyer via WebSocket
+        webSocketService.sendPrivateMessage(otherUserId, content)
 
-                    sendButton.isEnabled = true
-                    messageInput.isEnabled = true
+        // Vider le champ de saisie immédiatement
+        messageInput.text.clear()
 
-                    if (response.isSuccessful) {
-                        messageInput.text.clear()
-                        loadMessages()
-                    } else {
-                        Log.e(TAG, "Erreur envoi message: ${response.code()}")
-                        Toast.makeText(context, "Erreur lors de l'envoi", Toast.LENGTH_SHORT).show()
-                    }
-                }
-
-                override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
-                    if (!isAdded) return
-
-                    sendButton.isEnabled = true
-                    messageInput.isEnabled = true
-
-                    Log.e(TAG, "Erreur réseau envoi", t)
-                    Toast.makeText(context, "Erreur réseau", Toast.LENGTH_SHORT).show()
-                }
-            })
+        // Réactiver après un délai court
+        messageInput.postDelayed({
+            if (isAdded) {
+                messageInput.isEnabled = true
+                sendButton.isEnabled = webSocketService.isConnected()
+            }
+        }, 500)
     }
 
-    private fun markMessageAsRead(messageId: String) {
-        val token = getAuthToken()
-        if (token.isEmpty()) return
-
-        ApiClient.markConversationMessageAsRead(token, conversationId, messageId)
-            .enqueue(object : Callback<ConversationMessagesResponse> {
-                override fun onResponse(call: Call<ConversationMessagesResponse>, response: Response<ConversationMessagesResponse>) {
-                    // Message marqué comme lu
-                }
-
-                override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
-                    Log.e(TAG, "Erreur marquage lecture", t)
-                }
-            })
+    private fun scrollToBottom() {
+        if (adapter.itemCount > 0) {
+            recyclerView.smoothScrollToPosition(adapter.itemCount - 1)
+        }
     }
 
     private fun showMessageOptions(message: ConversationMessage, position: Int) {
+        // Vérifier si c'est un message de l'utilisateur actuel
+        if (message.expediteur != myUserId) {
+            return // Ne pas montrer d'options pour les messages des autres
+        }
+
         val options = arrayOf("Modifier", "Supprimer", "Répondre")
 
         android.app.AlertDialog.Builder(requireContext())
@@ -260,15 +373,40 @@ class PrivateConversationFragment : Fragment() {
     }
 
     private fun editMessage(message: ConversationMessage) {
-        Toast.makeText(context, "Modification pas encore implémentée", Toast.LENGTH_SHORT).show()
+        val input = EditText(requireContext())
+        input.setText(message.contenu)
+
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Modifier le message")
+            .setView(input)
+            .setPositiveButton("Modifier") { _, _ ->
+                val newContent = input.text.toString().trim()
+                if (newContent.isNotEmpty() && newContent != message.contenu) {
+                    // Utiliser WebSocket au lieu de l'API REST
+                    webSocketService.modifyPrivateMessage(message.expediteur, newContent)
+                }
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
     }
 
     private fun deleteMessage(message: ConversationMessage) {
-        Toast.makeText(context, "Suppression pas encore implémentée", Toast.LENGTH_SHORT).show()
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Supprimer le message")
+            .setMessage("Êtes-vous sûr de vouloir supprimer ce message ?")
+            .setPositiveButton("Supprimer") { _, _ ->
+                // Utiliser WebSocket au lieu de l'API REST
+                webSocketService.deletePrivateMessage(message.expediteur)
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
     }
 
     private fun replyToMessage(message: ConversationMessage) {
-        Toast.makeText(context, "Réponse pas encore implémentée", Toast.LENGTH_SHORT).show()
+        // Implémenter la logique de réponse
+        messageInput.setText("@${username} ")
+        messageInput.setSelection(messageInput.text.length)
+        messageInput.requestFocus()
     }
 
     private fun showEmptyState() {
@@ -284,5 +422,58 @@ class PrivateConversationFragment : Fragment() {
     private fun getAuthToken(): String {
         return requireActivity().getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE)
             .getString("auth_token", "") ?: ""
+    }
+
+    private fun getCurrentUserId(): String {
+        return requireActivity().getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE)
+            .getString("user_id", "") ?: ""
+    }
+
+    private fun getCurrentUsername(): String {
+        return requireActivity().getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE)
+            .getString("username", "") ?: ""
+    }
+
+    // Implémentation des callbacks WebSocket (compatibilité)
+    override fun onNewPrivateMessage(message: org.json.JSONObject) {
+        // Déjà géré par les LiveData observers
+    }
+
+    override fun onPrivateMessageSent(messageId: String) {
+        // Déjà géré par les LiveData observers
+    }
+
+    override fun onPrivateMessageRead(messageId: String) {
+        // Déjà géré par les LiveData observers
+    }
+
+    override fun onPrivateMessageModified(message: org.json.JSONObject) {
+        // Déjà géré par les LiveData observers
+    }
+
+    override fun onPrivateMessageDeleted(messageId: String) {
+        // Déjà géré par les LiveData observers
+    }
+
+    override fun onError(error: String) {
+        // Déjà géré par les LiveData observers
+    }
+
+    override fun onConnectionChanged(isConnected: Boolean) {
+        // Déjà géré par les LiveData observers
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Assurer que WebSocket est connecté
+        val token = getAuthToken()
+        if (token.isNotEmpty() && !webSocketService.isConnected()) {
+            webSocketService.initialize(token)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        webSocketService.removeMessageListener(this)
     }
 }

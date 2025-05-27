@@ -26,8 +26,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import androidx.core.content.edit
+import com.example.supchat.SupChatApplication
 import com.example.supchat.api.ApiClient
-
+import com.example.supchat.socket.WebSocketService
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
@@ -42,6 +43,10 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var themeToggleButton: TextView
     private lateinit var searchUsersButton: TextView
 
+    // ✅ Propriétés WebSocket
+    private lateinit var app: SupChatApplication
+    private var webSocketService: WebSocketService? = null
+
     companion object {
         private const val TAG = "HomeActivity"
     }
@@ -49,6 +54,9 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+
+        // ✅ Initialiser WebSocket en premier
+        initializeWebSocket()
 
         // Initialisation des vues
         drawerLayout = findViewById(R.id.drawer_layout)
@@ -62,31 +70,21 @@ class HomeActivity : AppCompatActivity() {
         // Initialiser le bouton de gestion des workspaces
         val manageWorkspacesButton = findViewById<TextView>(R.id.manage_workspaces_text)
         manageWorkspacesButton.setOnClickListener {
-            // Fermer le drawer
             drawerLayout.closeDrawer(GravityCompat.END)
-
-            // Ouvrir le fragment de gestion des workspaces
             openWorkspaceManagement()
         }
 
         // Initialiser le bouton de recherche de workspaces publics
         val searchPublicWorkspacesButton = findViewById<TextView>(R.id.search_public_workspaces_text)
         searchPublicWorkspacesButton.setOnClickListener {
-            // Fermer le drawer
             drawerLayout.closeDrawer(GravityCompat.END)
-
-            // Ouvrir directement la recherche de workspaces publics
             openPublicWorkspaceSearch()
         }
 
         val privateMessagesText = findViewById<TextView>(R.id.private_messages_text)
         privateMessagesText.setOnClickListener {
-            // Fermer le drawer
             drawerLayout.closeDrawer(GravityCompat.END)
-
-            // Afficher le fragment de liste de conversations
             val fragment = PrivateConversationsListFragment()
-
             supportFragmentManager.beginTransaction()
                 .replace(R.id.main_content_container, fragment)
                 .addToBackStack(null)
@@ -133,21 +131,68 @@ class HomeActivity : AppCompatActivity() {
         // Afficher l'écran d'accueil en attendant
         showWelcomeScreen()
     }
+
+    // ✅ Méthode pour initialiser WebSocket
+    private fun initializeWebSocket() {
+        try {
+            app = application as SupChatApplication
+            webSocketService = app.getWebSocketService()
+
+            // Si WebSocket n'est pas connecté, l'initialiser
+            val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
+            if (!token.isNullOrEmpty() && (webSocketService == null || !app.isWebSocketConnected())) {
+                app.initializeWebSocket(token)
+                webSocketService = app.getWebSocketService()
+            }
+
+            // Observer le statut de connexion
+            webSocketService?.connectionStatus?.observe(this) { isConnected ->
+                onWebSocketConnectionChanged(isConnected)
+            }
+
+            Log.d(TAG, "WebSocket initialisé: ${app.isWebSocketConnected()}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur initialisation WebSocket", e)
+        }
+    }
+
+    // ✅ Gérer les changements de connexion WebSocket
+    private fun onWebSocketConnectionChanged(isConnected: Boolean) {
+        runOnUiThread {
+            if (isConnected) {
+                Log.d(TAG, "WebSocket connecté")
+                // Optionnel: afficher un indicateur de connexion
+            } else {
+                Log.w(TAG, "WebSocket déconnecté")
+                // Optionnel: afficher un indicateur de déconnexion
+            }
+        }
+    }
+
+    // ✅ Obtenir l'ID de l'utilisateur actuel
+    fun getCurrentUserId(): String {
+        return getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
+            .getString("user_id", "") ?: ""
+    }
+
+    // ✅ Obtenir le nom d'utilisateur actuel
+    fun getCurrentUsername(): String {
+        return getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
+            .getString("username", "") ?: ""
+    }
+
     private fun openPublicWorkspaceSearch() {
         val workspaceManagementFragment = WorkspaceManagementFragment.newInstance()
-
-        // Passer l'argument pour indiquer qu'il faut afficher directement la recherche publique
         val args = Bundle()
         args.putBoolean("showPublicSearch", true)
         workspaceManagementFragment.arguments = args
-
         supportFragmentManager.beginTransaction()
             .replace(R.id.main_content_container, workspaceManagementFragment)
             .addToBackStack(null)
             .commit()
     }
+
     private fun showWelcomeScreen() {
-        // Afficher un message "Sélectionnez un serveur"
         val welcomeFragment = WelcomeFragment()
         supportFragmentManager.beginTransaction()
             .replace(R.id.main_content_container, welcomeFragment)
@@ -155,17 +200,13 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun loadChannels(workspaceName: String) {
-        // Si on clique sur le même workspace, ne rien faire
         if (workspaceName == currentWorkspaceName &&
             supportFragmentManager.findFragmentById(R.id.main_content_container) is CanauxFragment
         ) {
             return
         }
 
-        // Enregistrer le workspace actuellement sélectionné
         currentWorkspaceName = workspaceName
-
-        // Trouver l'ID du workspace basé sur son nom
         val workspace = workspaces.find { it.nom == workspaceName }
         val workspaceId = workspace?.id
 
@@ -175,13 +216,9 @@ class HomeActivity : AppCompatActivity() {
             return
         }
 
-        // Stocker l'ID du workspace actuel
         currentWorkspaceId = workspaceId
-
-        // Mettre en évidence visuellement le workspace sélectionné
         updateWorkspaceSelection(workspaceName)
 
-        // Charger les canaux pour le workspace et les afficher
         Log.d(TAG, "Chargement des canaux pour le workspace $workspaceName (ID: $workspaceId)")
 
         val canauxFragment = CanauxFragment.newInstance(workspaceName, workspaceId)
@@ -191,13 +228,10 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun updateWorkspaceSelection(workspaceName: String) {
-        // Parcourir tous les boutons de workspace et mettre à jour leur apparence
         for (i in 0 until serverListContainer.childCount) {
             val serverButton = serverListContainer.getChildAt(i) as? ImageButton
             if (serverButton != null) {
                 val isSelected = serverButton.tag == workspaceName
-
-                // Appliquer un style différent au bouton sélectionné
                 if (isSelected) {
                     serverButton.setBackgroundResource(R.drawable.selected_rounded_button)
                 } else {
@@ -207,26 +241,22 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    // Cette fonction sera appelée depuis le fragment des canaux
     fun openChat(canalId: String, canalNom: String) {
         try {
             Log.d(TAG, "Ouverture du chat: canal=$canalId, nom=$canalNom, workspace=$currentWorkspaceId")
 
-            // Vérifier si l'ID du canal est valide
             if (canalId.isEmpty()) {
                 Log.e(TAG, "Erreur: canalId est vide")
                 Toast.makeText(this, "Erreur: ID du canal invalide", Toast.LENGTH_SHORT).show()
                 return
             }
 
-            // Vérifier si l'ID du workspace est disponible
             if (currentWorkspaceId.isNullOrEmpty()) {
                 Log.e(TAG, "Erreur: currentWorkspaceId est null ou vide")
                 Toast.makeText(this, "Erreur: ID du workspace manquant", Toast.LENGTH_SHORT).show()
                 return
             }
 
-            // Vérifier que le token est valide
             val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
             if (token.isNullOrEmpty()) {
                 Log.e(TAG, "Token manquant avant ouverture du chat")
@@ -234,7 +264,6 @@ class HomeActivity : AppCompatActivity() {
                 return
             }
 
-            // Utiliser l'ID du workspace actuel
             val chatFragment = ChatFragment.newInstance(canalId, canalNom, currentWorkspaceId)
             supportFragmentManager.beginTransaction()
                 .replace(R.id.main_content_container, chatFragment)
@@ -274,16 +303,12 @@ class HomeActivity : AppCompatActivity() {
                         if (workspacesList != null && workspacesList.isNotEmpty()) {
                             Log.d(TAG, "Workspaces récupérés: ${workspacesList.size}")
 
-                            // Log de chaque workspace pour débogage
                             workspacesList.forEachIndexed { index, workspace ->
                                 Log.d(TAG, "Workspace[$index]: id=${workspace.id}, nom=${workspace.nom}, " +
                                         "proprietaire=${workspace.proprietaire}, visibilite=${workspace.visibilite}")
                             }
 
-                            // Mettre à jour la liste des workspaces
                             workspaces = workspacesList
-
-                            // Afficher les workspaces
                             displayWorkspaces(workspacesList)
                         } else {
                             Log.e(TAG, "Aucun workspace trouvé ou liste vide")
@@ -296,7 +321,6 @@ class HomeActivity : AppCompatActivity() {
                             ).show()
                         }
                     } else {
-                        // Log du corps de l'erreur si disponible
                         val errorBody = response.errorBody()?.string()
                         Log.e(TAG, "Erreur API: ${response.code()}, message: $errorBody")
 
@@ -328,7 +352,6 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun displayWorkspaces(workspaces: List<Workspace>) {
-        // Vider le conteneur des serveurs
         serverListContainer.removeAllViews()
 
         if (workspaces.isEmpty()) {
@@ -338,7 +361,6 @@ class HomeActivity : AppCompatActivity() {
 
         Log.d(TAG, "Affichage de ${workspaces.size} workspaces")
 
-        // Ajouter chaque workspace
         for (workspace in workspaces) {
             try {
                 val serverButton = layoutInflater.inflate(
@@ -347,60 +369,43 @@ class HomeActivity : AppCompatActivity() {
                     false
                 ) as ImageButton
 
-                // Configurer le bouton avec les données du workspace
                 serverButton.tag = workspace.nom
-
-                // Log des détails pour débogage
                 Log.d(TAG, "Ajout du bouton workspace: id=${workspace.id}, nom=${workspace.nom}")
 
-                // Configurer le clic sur le workspace
                 serverButton.setOnClickListener {
                     val workspaceName = it.tag as String
                     Log.d(TAG, "Clic sur workspace: $workspaceName")
                     loadChannels(workspaceName)
                 }
 
-                // Ajouter une description accessible pour le bouton
                 serverButton.contentDescription = "Serveur ${workspace.nom}"
-
-                // Ajouter le bouton au conteneur
                 serverListContainer.addView(serverButton)
             } catch (e: Exception) {
                 Log.e(TAG, "Erreur lors de l'ajout du workspace ${workspace.nom}", e)
             }
         }
 
-        // Si nous avons un workspace actif, mettre à jour la sélection visuelle
         currentWorkspaceName?.let { updateWorkspaceSelection(it) }
     }
 
-    // Gérer le bouton retour pour une navigation plus fluide
     override fun onBackPressed() {
         when {
             drawerLayout.isDrawerOpen(GravityCompat.END) -> {
-                // Fermer le drawer s'il est ouvert
                 drawerLayout.closeDrawer(GravityCompat.END)
             }
-
             supportFragmentManager.backStackEntryCount > 0 -> {
-                // Revenir au fragment précédent si possible
                 supportFragmentManager.popBackStack()
             }
-
             currentWorkspaceName != null -> {
-                // Si on est dans un workspace, revenir à l'écran d'accueil
                 currentWorkspaceName = null
                 showWelcomeScreen()
             }
-
             else -> {
-                // Comportement par défaut (quitter l'app)
                 super.onBackPressed()
             }
         }
     }
 
-    // Méthode pour rafraîchir les workspaces (pourrait être appelée par un bouton de rafraîchissement)
     fun refreshWorkspaces() {
         fetchWorkspaces()
     }
@@ -422,20 +427,20 @@ class HomeActivity : AppCompatActivity() {
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        // Appel à l'API de déconnexion
+        // ✅ Déconnecter WebSocket avant l'API
+        app.disconnectWebSocket()
+
         ApiClient.deconnexion(token)
             .enqueue(object : Callback<DeconnexionResponse> {
                 override fun onResponse(call: Call<DeconnexionResponse>, response: Response<DeconnexionResponse>) {
                     progressDialog.dismiss()
 
                     if (response.isSuccessful) {
-                        // Effacer le token d'authentification
                         getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
-                            .edit {
-                                remove("auth_token")
-                            }
+                            .edit()
+                            .clear()
+                            .apply()
 
-                        // Rediriger vers l'activité de connexion
                         redirectToLogin("Vous êtes déconnecté")
                     } else {
                         val errorBody = response.errorBody()?.string()
@@ -462,58 +467,52 @@ class HomeActivity : AppCompatActivity() {
             })
     }
 
+    // ✅ Méthode redirectToLogin modifiée
     fun redirectToLogin(message: String = "") {
-        // Afficher un message Toast si fourni
         if (message.isNotEmpty()) {
             Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         }
 
-        // Supprimer le token
+        // ✅ Déconnecter WebSocket
+        app.disconnectWebSocket()
+
         getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
             .edit()
-            .remove("auth_token")
+            .clear()
             .apply()
 
-        // Créer l'intent pour aller vers LoginActivity
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
     }
 
-    private fun openProfile() {
-        // Fermer le drawer si ouvert
-        if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
-            drawerLayout.closeDrawer(GravityCompat.END)
+    override fun onResume() {
+        super.onResume()
+        // ✅ Reconnecter WebSocket si nécessaire
+        if (!app.isWebSocketConnected()) {
+            val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
+            if (!token.isNullOrEmpty()) {
+                app.reconnectWebSocket()
+            }
         }
-
-        // Charger le fragment de profil
-        val profileFragment = ProfileFragment.newInstance()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.main_content_container, profileFragment)
-            .addToBackStack(null)
-            .commit()
-
-        Log.d(TAG, "Fragment de profil chargé")
     }
+
     fun applyTheme(isDarkMode: Boolean) {
-        // Enregistrer la préférence
         getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
             .edit()
             .putBoolean("dark_mode", isDarkMode)
             .apply()
 
-        // Appliquer le thème
         if (isDarkMode) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         } else {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         }
 
-        // Recréer l'activité pour appliquer le thème
         recreate()
     }
-    // Mettre à jour le texte du bouton en fonction du thème actuel
+
     private fun updateThemeButtonText() {
         val isDarkMode = getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
             .getBoolean("dark_mode", false)
@@ -524,8 +523,8 @@ class HomeActivity : AppCompatActivity() {
             "🌙 Thème Sombre"
         }
     }
+
     private fun openUserSearch() {
-        // Vérifier si le token est présent
         val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
         if (token.isNullOrEmpty()) {
             Log.e(TAG, "Token d'authentification manquant pour la recherche")
@@ -533,7 +532,6 @@ class HomeActivity : AppCompatActivity() {
             return
         }
 
-        // Charger le fragment de recherche
         val searchFragment = UserSearchFragment.newInstance()
         supportFragmentManager.beginTransaction()
             .replace(R.id.main_content_container, searchFragment)
@@ -541,6 +539,20 @@ class HomeActivity : AppCompatActivity() {
             .commit()
 
         Log.d(TAG, "Fragment de recherche d'utilisateurs chargé")
+    }
+
+    private fun openProfile() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
+            drawerLayout.closeDrawer(GravityCompat.END)
+        }
+
+        val profileFragment = ProfileFragment.newInstance()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.main_content_container, profileFragment)
+            .addToBackStack(null)
+            .commit()
+
+        Log.d(TAG, "Fragment de profil chargé")
     }
 
     fun openWorkspaceManagement() {
@@ -551,7 +563,6 @@ class HomeActivity : AppCompatActivity() {
             .commit()
     }
 
-    // Ouvrir la gestion des membres d'un workspace
     fun openWorkspaceMembers(workspaceId: String) {
         val workspaceMembersFragment = WorkspaceMembersFragment.newInstance(workspaceId)
         supportFragmentManager.beginTransaction()
@@ -560,7 +571,6 @@ class HomeActivity : AppCompatActivity() {
             .commit()
     }
 
-    // Ouvrir la gestion des invitations
     fun openWorkspaceInvitations(workspaceId: String) {
         val workspaceInvitationsFragment = WorkspaceInvitationsFragment.newInstance(workspaceId)
         supportFragmentManager.beginTransaction()
@@ -568,5 +578,4 @@ class HomeActivity : AppCompatActivity() {
             .addToBackStack(null)
             .commit()
     }
-
 }

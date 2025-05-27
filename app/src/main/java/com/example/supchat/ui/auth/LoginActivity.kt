@@ -11,6 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.supchat.R
+import com.example.supchat.SupChatApplication
 import com.example.supchat.api.ApiClient
 import com.example.supchat.models.request.LoginRequest
 import com.example.supchat.models.response.LoginResponse
@@ -167,19 +168,63 @@ class LoginActivity : AppCompatActivity() {
 
         getSharedPreferences("SupChatPrefs", MODE_PRIVATE).edit().apply {
             putString("auth_token", loginResponse.token)
-            putString("userid", loginResponse.data.user.userId)
+            putString("user_id", loginResponse.data.user.userId) // ✅ CORRIGÉ: user_id au lieu de userid
+            putString("username", loginResponse.data.user.username) // Ajouter le username si disponible
             apply()
         }
 
+        // ✅ NOUVEAU: Initialiser WebSocket après connexion réussie
+        val app = application as SupChatApplication
+        loginResponse.token?.let { token ->
+            app.initializeWebSocket(token)
+            Log.d("LoginActivity", "WebSocket initialisé après connexion")
+        }
+
         // Vérification immédiate
-        val savedUserId = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("_id", "")
+        val savedUserId = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("user_id", "")
         Log.d("LoginActivity", "Vérification après sauvegarde - UserID sauvegardé: $savedUserId")
     }
 
     private fun navigateToMainActivity() {
         Toast.makeText(this, "Connexion réussie", Toast.LENGTH_SHORT).show()
-        startActivity(Intent(this, HomeActivity::class.java))
+
+        val intent = Intent(this, HomeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
         finish()
+    }
+
+    private fun handleLoginSuccess(response: LoginResponse?) {
+        // Extraire l'ID utilisateur correctement
+        val userId = response?.data?.user?.userId
+        val username = response?.data?.user?.username
+        val token = response?.token
+
+        Log.d("LoginActivity", "Données de connexion: userId=${userId}, username=${username}, token=${token?.take(10)}...")
+
+        if (userId.isNullOrEmpty()) {
+            Log.e("LoginActivity", "ERREUR: ID utilisateur manquant ou null!")
+            Toast.makeText(this, "Erreur: données utilisateur incomplètes", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Sauvegarder les données utilisateur
+        val editor = getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE).edit()
+        editor.putString("user_id", userId) // ✅ CORRIGÉ
+        editor.putString("username", username)
+        editor.putString("auth_token", token)
+        editor.apply()
+
+        // ✅ NOUVEAU: Initialiser WebSocket
+        val app = application as SupChatApplication
+        token?.let {
+            app.initializeWebSocket(it)
+            Log.d("LoginActivity", "WebSocket initialisé avec succès")
+        }
+
+        // Vérification immédiate
+        val savedUserId = getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE).getString("user_id", "NON_TROUVÉ")
+        Log.d("LoginActivity", "ID utilisateur sauvegardé: $savedUserId")
     }
 
     private fun handleLoginError(response: Response<LoginResponse>) {
@@ -193,25 +238,5 @@ class LoginActivity : AppCompatActivity() {
 
     private fun handleLoginFailure(t: Throwable) {
         Toast.makeText(this, "Connexion impossible", Toast.LENGTH_SHORT).show()
-    }
-    private fun handleLoginSuccess(response: LoginResponse?) {
-        // Extraire l'ID utilisateur correctement
-        val userId = response?.data?.user?.userId
-        val token = response?.token
-
-        Log.d("LoginActivity", "Données de connexion: userId=${userId}, token=${token?.take(10)}...")
-
-        if (userId.isNullOrEmpty()) {
-            Log.e("LoginActivity", "ERREUR: ID utilisateur manquant ou null!")
-        }
-
-        val editor = getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE).edit()
-        editor.putString("_id", userId)
-        editor.putString("auth_token", token)
-        editor.apply()
-
-        // Vérification immédiate
-        val savedUserId = getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE).getString("user_id", "NON_VÉRIFIÉ")
-        Log.d("LoginActivity", "ID utilisateur sauvegardé: $savedUserId")
     }
 }
