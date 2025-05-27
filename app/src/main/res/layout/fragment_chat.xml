@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimary">
+
+    <!-- Barre supérieure avec le nom du canal et bouton retour -->
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimaryDark"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp">
+
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Retour" />
+
+        <TextView
+            android:id="@+id/channel_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp" />
+    </LinearLayout>
+
+    <!-- Indicateur de chargement -->
+    <ProgressBar
+        android:id="@+id/messages_progress_bar"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_centerInParent="true"
+        android:visibility="gone" />
+
+    <!-- Zone de messages avec RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/messages_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/top_bar"
+        android:layout_above="@+id/reply_info_bar"
+        android:padding="8dp"
+        android:clipToPadding="false" />
+
+    <!-- Barre d'information de réponse -->
+    <LinearLayout
+        android:id="@+id/reply_info_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/message_input_container"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#333333"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_revert"
+            android:layout_gravity="center_vertical"
+            android:tint="#AAAAAA" />
+
+        <TextView
+            android:id="@+id/reply_info_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Réponse à @utilisateur"
+            android:textColor="#DDDDDD"
+            android:layout_marginStart="8dp"
+            android:layout_gravity="center_vertical" />
+
+        <ImageButton
+            android:id="@+id/cancel_reply_button"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Annuler la réponse"
+            android:tint="#DDDDDD" />
+    </LinearLayout>
+
+    <!-- Zone de saisie de message -->
+    <LinearLayout
+        android:id="@+id/message_input_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:padding="8dp"
+        android:background="@color/colorPrimaryDark">
+        
+        <EditText
+            android:id="@+id/message_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Écrivez un message..."
+            android:textColorHint="#78FFFFFF"
+            android:textColor="@android:color/white"
+            android:padding="12dp"
+            android:background="@drawable/message_input_background"
+            android:imeOptions="actionSend"
+            android:inputType="textMultiLine"
+            android:maxLines="4" />
+        
+        <ImageButton
+            android:id="@+id/send_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_send"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Envoyer"
+            android:layout_marginStart="8dp"
+            android:tint="@color/colorAccent" />
+    </LinearLayout>
+
+    <!-- Conteneur pour les messages legacy (à supprimer si vous n'utilisez que RecyclerView) -->
+    <LinearLayout
+        android:id="@+id/messages_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
+</RelativeLayout>

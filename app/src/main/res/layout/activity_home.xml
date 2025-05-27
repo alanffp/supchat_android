@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- MAIN CONTENT -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Top Bar -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="#202225"
+            android:padding="10dp">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SupChat"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:layout_centerVertical="true" />
+            
+            <ImageButton
+                android:id="@+id/menu_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_menu"
+                android:contentDescription="@string/menu_button_description"
+                android:layout_centerVertical="true"
+                android:minHeight="48dp"
+                android:minWidth="48dp" />
+        </RelativeLayout>
+
+        <!-- Content Area (Servers and Main Content) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <!-- Servers (Left) -->
+            <LinearLayout
+                android:id="@+id/server_list"
+                android:layout_width="60dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:background="#202225">
+
+                <ImageButton
+                    android:id="@+id/server_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:src="@drawable/ic_server_example"
+                    android:background="@drawable/rounded_button"
+                    android:layout_margin="8dp"
+                    android:contentDescription="@string/server_list_description"
+                    android:minHeight="48dp"
+                    android:minWidth="48dp" />
+            </LinearLayout>
+
+            <!-- Main Content Container -->
+            <FrameLayout
+                android:id="@+id/main_content_container"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- RIGHT DRAWER -->
+    <LinearLayout
+        android:id="@+id/right_drawer"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:orientation="vertical"
+        android:background="#2F3136"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/profile_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="👤 Profil"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/profile_option_description" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚙️ Paramètres"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:contentDescription="@string/settings_option_description" />
+
+        <TextView
+            android:id="@+id/logout_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🚪 Déconnexion"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="@string/logout_option_description" />
+        
+        <!-- Ajoutez cette nouvelle option de recherche ici -->
+        <TextView
+            android:id="@+id/search_users_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔍 Rechercher des utilisateurs"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Rechercher des utilisateurs" />
+        
+        <!-- Messages privés -->
+        <TextView
+            android:id="@+id/private_messages_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="💬 Messages privés"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Accéder aux messages privés" />
+        
+        <!-- Gestion des workspaces -->
+        <TextView
+            android:id="@+id/manage_workspaces_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔧 Gérer les workspaces"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Gérer les workspaces" />
+            
+        <!-- Recherche de workspaces publics - REPOSITIONNÉ ICI -->
+        <TextView
+            android:id="@+id/search_public_workspaces_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔎 Rechercher des workspaces"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Rechercher des workspaces publics" />
+    </LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

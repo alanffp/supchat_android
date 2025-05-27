@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Descriptions for Accessibility -->
+    <string name="server_list_description">Liste des serveurs</string>
+    <string name="general_channel_description">Canal général</string>
+    <string name="menu_button_description">Ouvrir le menu</string>
+    <string name="messages_scroll_description">Messages de chat</string>
+    
+    <!-- Drawer Menu Options -->
+    <string name="profile_option_description">Profil utilisateur</string>
+    <string name="settings_option_description">Paramètres de l\'application</string>
+    <string name="logout_option_description">Se déconnecter</string>
+    
+    <!-- Static Text Strings -->
+    <string name="app_name">SupChat</string>
+    <string name="channel_general_name"># général</string>
+    <string name="message_input_hint">Envoyer un message...</string>
+    
+    <!-- Error Messages -->
+    <string name="error_connection_failed">Échec de la connexion</string>
+    <string name="error_send_message">Impossible d\'envoyer le message</string>
+    
+    <!-- Dialog Titles -->
+    <string name="dialog_confirm">Confirmer</string>
+    <string name="dialog_cancel">Annuler</string>
+    
+    <!-- Drawer Menu Titles -->
+    <string name="drawer_profile">👤 Profil</string>
+    <string name="drawer_settings">⚙️ Paramètres</string>
+    <string name="drawer_logout">🚪 Déconnexion</string>
+</resources>

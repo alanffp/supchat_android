@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#7289DA" /> <!-- Couleur différente pour indiquer la sélection -->
+    <corners android:radius="8dp" />
+    <stroke
+        android:width="2dp"
+        android:color="#FFFFFF" /> <!-- Bordure blanche pour le bouton sélectionné -->
+</shape>
