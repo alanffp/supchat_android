@@ -155,8 +155,10 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 showMessageOptions(message, position)
             },
             onMessageRead = { messageId ->
-                // Marquer via WebSocket
                 webSocketService.markMessageAsRead(messageId)
+            },
+            onMessageClick = { message, view -> // ✅ NOUVEAU
+                showQuickEditPopup(message, view)
             }
         )
 
@@ -165,7 +167,87 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 stackFromEnd = true
             }
             adapter = this@PrivateConversationFragment.adapter
+
+            // ✅ NOUVEAU: Masquer popup lors du scroll
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    dismissCurrentPopup()
+                }
+            })
         }
+    }
+    private var currentPopupWindow: android.widget.PopupWindow? = null
+
+    private fun showQuickEditPopup(message: ConversationMessage, anchorView: View) {
+        // Fermer le popup précédent s'il existe
+        dismissCurrentPopup()
+
+        try {
+            val inflater = LayoutInflater.from(requireContext())
+            val popupView = inflater.inflate(R.layout.popup_message_edit_conversation, null)
+
+            val editButton = popupView.findViewById<android.widget.Button>(R.id.edit_button)
+            val deleteButton = popupView.findViewById<android.widget.Button>(R.id.delete_button)
+
+            // Créer le PopupWindow
+            currentPopupWindow = android.widget.PopupWindow(
+                popupView,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                true
+            ).apply {
+                // Style du popup
+                setBackgroundDrawable(
+                    android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+                )
+                elevation = 12f
+                isOutsideTouchable = true
+                isFocusable = true
+            }
+
+            // Actions des boutons
+            editButton.setOnClickListener {
+                editMessage(message)
+                dismissCurrentPopup()
+            }
+
+            deleteButton.setOnClickListener {
+                deleteMessage(message)
+                dismissCurrentPopup()
+            }
+
+            // Calculer la position du popup
+            val location = IntArray(2)
+            anchorView.getLocationOnScreen(location)
+
+            // Afficher le popup à côté du message (à gauche du message)
+            currentPopupWindow?.showAsDropDown(
+                anchorView,
+                -popupView.measuredWidth, // Décalage à gauche
+                -anchorView.height / 2    // Centré verticalement
+            )
+
+            // Auto-fermeture après 5 secondes
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                dismissCurrentPopup()
+            }, 5000)
+
+            Log.d(TAG, "Popup d'édition affiché pour message: ${message.messageId}")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de l'affichage du popup", e)
+            Toast.makeText(context, "Erreur lors de l'affichage du menu", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun dismissCurrentPopup() {
+        currentPopupWindow?.let { popup ->
+            if (popup.isShowing) {
+                popup.dismiss()
+            }
+        }
+        currentPopupWindow = null
     }
 
     private fun setupSendButton() {
@@ -448,10 +530,13 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     }
 
     private fun showMessageOptions(message: ConversationMessage, position: Int) {
-        // Vérifier si c'est un message de l'utilisateur actuel
+        // ✅ VÉRIFICATION: seulement pour ses propres messages
         if (message.expediteur != myUserId) {
-            return // Ne pas montrer d'options pour les messages des autres
+            Log.d(TAG, "Options non disponibles - message d'un autre utilisateur")
+            return
         }
+
+        Log.d(TAG, "Options pour message: id=${message.messageId}, contenu='${message.contenu}'")
 
         val options = arrayOf("Modifier", "Supprimer", "Répondre")
 
@@ -498,34 +583,80 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     // ✅ NOUVEAU: Modifier message via API
     private fun editMessageViaAPI(message: ConversationMessage, newContent: String) {
         val token = getAuthToken()
-        if (token.isEmpty()) return
-
-        // Utiliser WebSocket en premier
-        if (webSocketService.isConnected()) {
-            webSocketService.modifyPrivateMessage(message.expediteur, newContent)
+        if (token.isEmpty()) {
+            showError("Session expirée")
             return
         }
 
-        // Fallback sur API REST
-        ApiClient.updateConversationMessage(token, conversationId, message.expediteur, newContent)
+        if (conversationId.isEmpty()) {
+            showError("ID de conversation manquant")
+            return
+        }
+
+        // ✅ UTILISER le vrai ID du message
+        val messageId = message.messageId
+
+        if (messageId.isEmpty()) {
+            showError("ID de message manquant")
+            return
+        }
+
+        Log.d(TAG, "=== MODIFICATION MESSAGE ===")
+        Log.d(TAG, "conversationId: '$conversationId'")
+        Log.d(TAG, "messageId: '$messageId'")
+        Log.d(TAG, "nouveau contenu: '$newContent'")
+        Log.d(TAG, "===============================")
+
+        // Désactiver temporairement l'interface
+        val progressDialog = android.app.ProgressDialog(requireContext()).apply {
+            setMessage("Modification en cours...")
+            setCancelable(false)
+            show()
+        }
+
+        ApiClient.updateConversationMessage(token, conversationId, messageId, newContent)
             .enqueue(object : Callback<ConversationMessagesResponse> {
                 override fun onResponse(
                     call: Call<ConversationMessagesResponse>,
                     response: Response<ConversationMessagesResponse>
                 ) {
+                    progressDialog.dismiss()
+
                     if (!isAdded) return
 
+                    Log.d(TAG, "=== RÉPONSE MODIFICATION ===")
+                    Log.d(TAG, "Code: ${response.code()}")
+                    Log.d(TAG, "Success: ${response.isSuccessful}")
+
                     if (response.isSuccessful) {
-                        Toast.makeText(context, "Message modifié", Toast.LENGTH_SHORT).show()
-                        loadMessages() // Recharger pour voir les changements
+                        val responseBody = response.body()
+                        Log.d(TAG, "Réponse: $responseBody")
+
+                        Toast.makeText(context, "Message modifié avec succès", Toast.LENGTH_SHORT).show()
+
+                        // Recharger les messages pour voir les changements
+                        loadMessages()
                     } else {
-                        Toast.makeText(context, "Erreur lors de la modification", Toast.LENGTH_SHORT).show()
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "Erreur modification: Code=${response.code()}, Body=$errorBody")
+
+                        val errorMessage = when (response.code()) {
+                            404 -> "Message non trouvé"
+                            403 -> "Vous ne pouvez pas modifier ce message"
+                            400 -> "Contenu invalide"
+                            else -> "Erreur lors de la modification (${response.code()})"
+                        }
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                     }
                 }
 
                 override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
+                    progressDialog.dismiss()
+
                     if (!isAdded) return
-                    Toast.makeText(context, "Erreur réseau", Toast.LENGTH_SHORT).show()
+
+                    Log.e(TAG, "Erreur réseau modification", t)
+                    Toast.makeText(context, "Erreur réseau: ${t.message}", Toast.LENGTH_LONG).show()
                 }
             })
     }
@@ -533,34 +664,72 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     // ✅ NOUVEAU: Supprimer message via API
     private fun deleteMessageViaAPI(message: ConversationMessage) {
         val token = getAuthToken()
-        if (token.isEmpty()) return
-
-        // Utiliser WebSocket en premier
-        if (webSocketService.isConnected()) {
-            webSocketService.deletePrivateMessage(message.expediteur)
+        if (token.isEmpty()) {
+            showError("Session expirée")
             return
         }
 
-        // Fallback sur API REST
-        ApiClient.deleteConversationMessage(token, conversationId, message.expediteur)
+        if (conversationId.isEmpty()) {
+            showError("ID de conversation manquant")
+            return
+        }
+
+        // ✅ UTILISER le vrai ID du message
+        val messageId = message.messageId
+
+        if (messageId.isEmpty()) {
+            showError("ID de message manquant")
+            return
+        }
+
+        Log.d(TAG, "=== SUPPRESSION MESSAGE ===")
+        Log.d(TAG, "conversationId: '$conversationId'")
+        Log.d(TAG, "messageId: '$messageId'")
+        Log.d(TAG, "==============================")
+
+        val progressDialog = android.app.ProgressDialog(requireContext()).apply {
+            setMessage("Suppression en cours...")
+            setCancelable(false)
+            show()
+        }
+
+        ApiClient.deleteConversationMessage(token, conversationId, messageId)
             .enqueue(object : Callback<ConversationMessagesResponse> {
                 override fun onResponse(
                     call: Call<ConversationMessagesResponse>,
                     response: Response<ConversationMessagesResponse>
                 ) {
+                    progressDialog.dismiss()
+
                     if (!isAdded) return
+
+                    Log.d(TAG, "=== RÉPONSE SUPPRESSION ===")
+                    Log.d(TAG, "Code: ${response.code()}")
+                    Log.d(TAG, "Success: ${response.isSuccessful}")
 
                     if (response.isSuccessful) {
                         Toast.makeText(context, "Message supprimé", Toast.LENGTH_SHORT).show()
                         loadMessages() // Recharger pour voir les changements
                     } else {
-                        Toast.makeText(context, "Erreur lors de la suppression", Toast.LENGTH_SHORT).show()
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "Erreur suppression: Code=${response.code()}, Body=$errorBody")
+
+                        val errorMessage = when (response.code()) {
+                            404 -> "Message non trouvé"
+                            403 -> "Vous ne pouvez pas supprimer ce message"
+                            else -> "Erreur lors de la suppression (${response.code()})"
+                        }
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                     }
                 }
 
                 override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
+                    progressDialog.dismiss()
+
                     if (!isAdded) return
-                    Toast.makeText(context, "Erreur réseau", Toast.LENGTH_SHORT).show()
+
+                    Log.e(TAG, "Erreur réseau suppression", t)
+                    Toast.makeText(context, "Erreur réseau: ${t.message}", Toast.LENGTH_LONG).show()
                 }
             })
     }
@@ -631,7 +800,14 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         val token = getAuthToken()
         if (token.isEmpty()) return
 
-        // Utiliser WebSocket en premier
+        if (conversationId.isEmpty()) {
+            Log.e(TAG, "conversationId vide pour marquer comme lu")
+            return
+        }
+
+        Log.d(TAG, "Marquage lecture: conversationId='$conversationId', messageId='$messageId'")
+
+        // Utiliser WebSocket en premier si connecté
         if (webSocketService.isConnected()) {
             webSocketService.markMessageAsRead(messageId)
             return
@@ -646,11 +822,13 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 ) {
                     if (response.isSuccessful) {
                         Log.d(TAG, "Message $messageId marqué comme lu via API")
+                    } else {
+                        Log.e(TAG, "Erreur marquage lecture: ${response.code()}")
                     }
                 }
 
                 override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
-                    Log.e(TAG, "Erreur marquage lecture via API", t)
+                    Log.e(TAG, "Erreur réseau marquage lecture", t)
                 }
             })
     }
@@ -676,12 +854,13 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
 
     override fun onPause() {
         super.onPause()
-        // ✅ NOUVEAU: Marquer comme lu quand on quitte la conversation
+        dismissCurrentPopup() // Fermer le popup si l'utilisateur quitte
         markUnreadMessagesAsRead()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        dismissCurrentPopup()
         webSocketService.removeMessageListener(this)
     }
 }

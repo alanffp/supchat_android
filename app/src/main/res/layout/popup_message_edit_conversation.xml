@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/popup_conversation_background"
+    android:padding="8dp"
+    android:elevation="12dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <Button
+        android:id="@+id/edit_button"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="✏️ Modifier"
+        android:textSize="12sp"
+        android:backgroundTint="#2196F3"
+        android:textColor="@android:color/white"
+        android:layout_margin="4dp"
+        android:paddingHorizontal="12dp"
+        android:minWidth="0dp" />
+
+    <Button
+        android:id="@+id/delete_button"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="🗑️ Supprimer"
+        android:textSize="12sp"
+        android:backgroundTint="#F44336"
+        android:textColor="@android:color/white"
+        android:layout_margin="4dp"
+        android:paddingHorizontal="12dp"
+        android:minWidth="0dp" />
+
+</LinearLayout>

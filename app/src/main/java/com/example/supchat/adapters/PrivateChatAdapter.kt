@@ -18,7 +18,8 @@ class PrivateChatAdapter(
     private val context: Context,
     private val currentUserId: String,
     private val onMessageLongClick: (ConversationMessage, Int) -> Unit,
-    private val onMessageRead: (String) -> Unit // Callback pour marquer comme lu
+    private val onMessageRead: (String) -> Unit,
+    private val onMessageClick: (ConversationMessage, View) -> Unit // ✅ NOUVEAU
 ) : RecyclerView.Adapter<PrivateChatAdapter.MessageViewHolder>() {
 
     private var messages = mutableListOf<ConversationMessage>()
@@ -85,6 +86,26 @@ class PrivateChatAdapter(
             configureLongClick(message, isMyMessage)
         }
 
+        private fun configureClickListeners(message: ConversationMessage, isMyMessage: Boolean) {
+            if (isMyMessage) {
+                // Clic simple → Popup d'édition
+                itemView.setOnClickListener { view ->
+                    onMessageClick(message, view)
+                }
+
+                // Long clic → Menu complet (existant)
+                itemView.setOnLongClickListener {
+                    onMessageLongClick(message, adapterPosition)
+                    true
+                }
+            } else {
+                // Messages des autres : pas d'interaction
+                itemView.setOnClickListener(null)
+                itemView.setOnLongClickListener(null)
+                itemView.isClickable = false
+                itemView.isLongClickable = false
+            }
+        }
         private fun showSentMessage(message: ConversationMessage) {
             sentMessageLayout.visibility = View.VISIBLE
             receivedMessageLayout.visibility = View.GONE

@@ -15,6 +15,7 @@ data class ConversationMessagesData(
 )
 
 data class ConversationMessage(
+    @SerializedName("_id") val id: String = "", // ✅ AJOUTÉ: ID unique du message
     @SerializedName("contenu") val contenu: String,
     @SerializedName("expediteur") val expediteur: String,
     @SerializedName("conversation") val conversation: String,
@@ -29,6 +30,7 @@ data class ConversationMessage(
 ) {
     // Pour compatibilité avec votre code existant
     val expediteurId: String get() = expediteur
+    val messageId: String get() = id.ifEmpty { expediteur }
 }
 
 data class MessageLecture(

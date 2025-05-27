@@ -195,6 +195,7 @@ class SafeConversationMessagesResponseDeserializer : JsonDeserializer<Conversati
             }
 
             ConversationMessage(
+                id = messageObject.get("_id")?.asString ?: "", // ✅ NOUVEAU: Extraire l'ID
                 contenu = messageObject.get("contenu")?.asString ?: "",
                 expediteur = expediteurId,
                 conversation = conversationId,
