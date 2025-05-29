@@ -36,6 +36,7 @@ import com.example.supchat.models.response.messageprivate.ConversationMessagesRe
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
 import com.example.supchat.models.response.notifications.NotificationsResponse
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.DELETE

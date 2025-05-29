@@ -91,7 +91,7 @@
         android:layout_above="@+id/input_container"
         android:padding="8dp" />
 
-    <!-- ✅ NOUVEAU: Container principal pour input + options -->
+    <!-- ✅ Container principal pour input + options -->
     <LinearLayout
         android:id="@+id/input_container"
         android:layout_width="match_parent"
@@ -100,7 +100,54 @@
         android:layout_alignParentBottom="true"
         android:background="@color/DarkBlue">
 
-        <!-- ✅ NOUVEAU: Zone d'options (masquée par défaut) -->
+        <!-- Zone de saisie de message -->
+        <LinearLayout
+            android:id="@+id/message_input_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <!-- Bouton + / X -->
+            <ImageButton
+                android:id="@+id/plus_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_add"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Options"
+                android:layout_gravity="center_vertical"
+                android:tint="@color/colorAccent" />
+
+            <EditText
+                android:id="@+id/message_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Écrivez un message..."
+                android:textColorHint="#78FFFFFF"
+                android:textColor="@android:color/black"
+                android:padding="12dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/message_input_background"
+                android:imeOptions="actionSend"
+                android:inputType="textMultiLine"
+                android:maxLines="4" />
+
+            <ImageButton
+                android:id="@+id/send_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_send"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Envoyer"
+                android:layout_marginStart="8dp"
+                android:tint="@color/colorAccent"
+                android:enabled="false" />
+
+        </LinearLayout>
+
+        <!-- ✅ Zone d'options EN DESSOUS de la zone de saisie -->
         <LinearLayout
             android:id="@+id/options_container"
             android:layout_width="match_parent"
@@ -108,7 +155,7 @@
             android:orientation="vertical"
             android:padding="12dp"
             android:visibility="gone"
-            android:background="#34495E">
+            android:background="#2C3E50">
 
             <!-- Boutons principaux -->
             <LinearLayout
@@ -127,8 +174,7 @@
                     android:backgroundTint="#9B59B6"
                     android:textColor="@android:color/white"
                     android:layout_marginEnd="8dp"
-                    android:paddingHorizontal="16dp"
-                    style="@style/Widget.MaterialComponents.Button" />
+                    android:paddingHorizontal="16dp" />
 
                 <Button
                     android:id="@+id/file_button"
@@ -138,8 +184,7 @@
                     android:textSize="12sp"
                     android:backgroundTint="#3498DB"
                     android:textColor="@android:color/white"
-                    android:paddingHorizontal="16dp"
-                    style="@style/Widget.MaterialComponents.Button" />
+                    android:paddingHorizontal="16dp" />
 
             </LinearLayout>
 
@@ -181,53 +226,6 @@
                     android:layout_marginEnd="8dp" />
 
             </LinearLayout>
-
-        </LinearLayout>
-
-        <!-- Zone de saisie de message (existante mais modifiée) -->
-        <LinearLayout
-            android:id="@+id/message_input_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp">
-
-            <!-- ✅ NOUVEAU: Bouton + / X -->
-            <ImageButton
-                android:id="@+id/plus_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_add"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Options"
-                android:layout_gravity="center_vertical"
-                android:tint="@color/colorAccent" />
-
-            <EditText
-                android:id="@+id/message_input"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Écrivez un message..."
-                android:textColorHint="#78FFFFFF"
-                android:textColor="@android:color/black"
-                android:padding="12dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/message_input_background"
-                android:imeOptions="actionSend"
-                android:inputType="textMultiLine"
-                android:maxLines="4" />
-
-            <ImageButton
-                android:id="@+id/send_button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_menu_send"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Envoyer"
-                android:layout_marginStart="8dp"
-                android:tint="@color/colorAccent"
-                android:enabled="false" />
 
         </LinearLayout>
 

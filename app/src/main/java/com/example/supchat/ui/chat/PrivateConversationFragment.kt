@@ -1,12 +1,20 @@
 package com.example.supchat.ui.chat
 
+import android.Manifest
+import android.app.ProgressDialog
 import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,9 +30,14 @@ import com.example.supchat.socket.WebSocketService
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
 class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener {
 
+    // Vues existantes
     private lateinit var recyclerView: RecyclerView
     private lateinit var messageInput: EditText
     private lateinit var sendButton: ImageButton
@@ -35,11 +48,61 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     private lateinit var webSocketService: WebSocketService
     private lateinit var notificationService: NotificationService
 
+    // ✅ NOUVELLES vues pour fichiers
+    private lateinit var plusButton: ImageButton
+    private lateinit var optionsContainer: LinearLayout
+    private lateinit var messageInputContainer: LinearLayout
+    private lateinit var fileButton: Button
+    private lateinit var pollButton: Button
+    private lateinit var cameraButton: ImageButton
+    private lateinit var galleryButton: ImageButton
+    private lateinit var videoButton: ImageButton
+
     private var conversationId: String = ""
     private var otherUserId: String = ""
     private var username: String = ""
     private var myUserId: String = ""
     private var profilePicture: String? = null
+
+    // ✅ NOUVELLES variables pour gestion fichiers
+    private var isOptionsVisible = false
+    private var currentPhotoPath: String? = null
+
+    // ✅ NOUVEAUX lanceurs pour résultats d'activité
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { handleSelectedFile(it, "Image de la galerie") }
+    }
+
+    private val cameraLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            currentPhotoPath?.let { path ->
+                val file = File(path)
+                if (file.exists()) {
+                    uploadFile(file, "Photo prise")
+                }
+            }
+        }
+    }
+
+    private val fileLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { handleSelectedFile(it, "Fichier sélectionné") }
+    }
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            openCamera()
+        } else {
+            Toast.makeText(context, "Permission caméra refusée", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     companion object {
         private const val TAG = "PrivateConversation"
@@ -79,7 +142,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             profilePicture = it.getString(ARG_PROFILE_PICTURE)
         }
 
-        // ✅ NOUVEAU: Debug des paramètres
+        // Debug des paramètres
         Log.d(TAG, "=== PARAMÈTRES DE LA CONVERSATION ===")
         Log.d(TAG, "conversationId: '$conversationId'")
         Log.d(TAG, "otherUserId: '$otherUserId'")
@@ -116,6 +179,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         initViews(view)
         setupRecyclerView()
         setupSendButton()
+        setupFileButtons() // ✅ NOUVEAU
         setupWebSocketObservers()
         loadMessages()
 
@@ -123,13 +187,23 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     }
 
     private fun initViews(view: View) {
+        // Vues existantes
         recyclerView = view.findViewById(R.id.messages_recycler_view)
         messageInput = view.findViewById(R.id.message_input)
         sendButton = view.findViewById(R.id.send_button)
         progressBar = view.findViewById(R.id.messages_progress_bar)
-
         connectionIndicator = view.findViewById(R.id.connection_indicator)
         connectionStatusText = view.findViewById(R.id.connection_status_text)
+
+        // ✅ NOUVELLES vues pour fichiers
+        plusButton = view.findViewById(R.id.plus_button)
+        optionsContainer = view.findViewById(R.id.options_container)
+        messageInputContainer = view.findViewById(R.id.message_input_container)
+        fileButton = view.findViewById(R.id.file_button)
+        pollButton = view.findViewById(R.id.poll_button)
+        cameraButton = view.findViewById(R.id.camera_button)
+        galleryButton = view.findViewById(R.id.gallery_button)
+        videoButton = view.findViewById(R.id.video_button)
 
         val usernameTextView: TextView = view.findViewById(R.id.username_text)
         usernameTextView.text = username
@@ -142,9 +216,277 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         // Charger l'image de profil si disponible
         val profileImageView: de.hdodenhof.circleimageview.CircleImageView = view.findViewById(R.id.user_profile_image)
         if (!profilePicture.isNullOrEmpty()) {
-            // Utiliser Glide pour charger l'image (si vous l'avez)
+            // Utiliser Glide pour charger l'image si nécessaire
             // Glide.with(this).load("http://10.0.2.2:3000/uploads/profile-pictures/$profilePicture").into(profileImageView)
         }
+    }
+
+    private fun setupFileButtons() {
+        // Bouton + / X
+        plusButton.setOnClickListener {
+            Log.d(TAG, "Clic sur bouton plus/croix")
+            toggleOptionsPanel()
+        }
+
+        // Bouton fichier
+        fileButton.setOnClickListener {
+            Log.d(TAG, "Clic sur bouton fichier")
+            openFilePicker()
+        }
+
+        // Bouton sondage
+        pollButton.setOnClickListener {
+            Log.d(TAG, "Clic sur bouton sondage")
+            Toast.makeText(context, "Sondage - À implémenter", Toast.LENGTH_SHORT).show()
+            hideOptionsPanel()
+        }
+
+        // Bouton caméra
+        cameraButton.setOnClickListener {
+            Log.d(TAG, "Clic sur bouton caméra")
+            checkCameraPermissionAndOpen()
+        }
+
+        // Bouton galerie
+        galleryButton.setOnClickListener {
+            Log.d(TAG, "Clic sur bouton galerie")
+            openGallery()
+        }
+
+        // Bouton vidéo
+        videoButton.setOnClickListener {
+            Log.d(TAG, "Clic sur bouton vidéo")
+            openVideoPicker()
+        }
+    }
+
+    private fun toggleOptionsPanel() {
+        Log.d(TAG, "Toggle options panel - État actuel: $isOptionsVisible")
+
+        if (isOptionsVisible) {
+            hideOptionsPanel()
+        } else {
+            showOptionsPanel()
+        }
+    }
+
+    private fun showOptionsPanel() {
+        isOptionsVisible = true
+
+        // Changer l'icône + en X
+        plusButton.setImageResource(R.drawable.ic_close)
+
+        // ✅ CORRECTION: Animation plus stable
+        optionsContainer.visibility = View.VISIBLE
+        optionsContainer.alpha = 0f
+
+        // Animation douce
+        optionsContainer.animate()
+            .alpha(1f)
+            .setDuration(250)
+            .setListener(null)
+            .start()
+
+        Log.d(TAG, "Panneau d'options ouvert")
+    }
+
+    private fun hideOptionsPanel() {
+        isOptionsVisible = false
+
+        // Changer l'icône X en +
+        plusButton.setImageResource(R.drawable.ic_add)
+
+        // ✅ CORRECTION: Animation plus stable
+        optionsContainer.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction {
+                if (!isOptionsVisible) { // ✅ Vérifier qu'on veut toujours fermer
+                    optionsContainer.visibility = View.GONE
+                }
+            }
+            .start()
+
+        Log.d(TAG, "Panneau d'options fermé")
+    }
+
+    private fun openFilePicker() {
+        fileLauncher.launch("*/*")
+    }
+
+    private fun openGallery() {
+        galleryLauncher.launch("image/*")
+    }
+
+    private fun openVideoPicker() {
+        galleryLauncher.launch("video/*")
+    }
+
+    private fun checkCameraPermissionAndOpen() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                openCamera()
+            }
+            else -> {
+                permissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
+    private fun openCamera() {
+        val photoFile = createImageFile()
+        photoFile?.let { file ->
+            currentPhotoPath = file.absolutePath
+            val photoURI = FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.fileprovider",
+                file
+            )
+            cameraLauncher.launch(photoURI)
+        }
+    }
+
+    private fun createImageFile(): File? {
+        return try {
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val imageFileName = "JPEG_${timeStamp}_"
+            val storageDir = File(requireContext().cacheDir, "images")
+            if (!storageDir.exists()) {
+                storageDir.mkdirs()
+            }
+            File.createTempFile(imageFileName, ".jpg", storageDir)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur création fichier image", e)
+            null
+        }
+    }
+
+    private fun handleSelectedFile(uri: Uri, description: String) {
+        try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val fileName = getFileName(uri) ?: "fichier_${System.currentTimeMillis()}"
+
+            // Créer un fichier temporaire
+            val tempFile = File(requireContext().cacheDir, fileName)
+            val outputStream = FileOutputStream(tempFile)
+
+            inputStream?.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            uploadFile(tempFile, description)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur traitement fichier", e)
+            Toast.makeText(context, "Erreur lors du traitement du fichier", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getFileName(uri: Uri): String? {
+        var result: String? = null
+        if (uri.scheme == "content") {
+            val cursor = requireContext().contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex >= 0) {
+                        result = it.getString(nameIndex)
+                    }
+                }
+            }
+        }
+        if (result == null) {
+            result = uri.path
+            val cut = result?.lastIndexOf('/')
+            if (cut != -1) {
+                result = result?.substring(cut!! + 1)
+            }
+        }
+        return result
+    }
+
+    private fun uploadFile(file: File, description: String) {
+        val token = getAuthToken()
+        if (token.isEmpty()) {
+            showError("Session expirée")
+            return
+        }
+
+        if (conversationId.isEmpty()) {
+            showError("ID de conversation manquant")
+            return
+        }
+
+        // Vérifier la taille du fichier (max 20MB)
+        val maxSize = 20 * 1024 * 1024 // 20MB en bytes
+        if (file.length() > maxSize) {
+            Toast.makeText(context, "Fichier trop volumineux (max 20MB)", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // Afficher un indicateur de progression
+        val progressDialog = ProgressDialog(requireContext()).apply {
+            setMessage("Envoi du fichier...")
+            setCancelable(false)
+            show()
+        }
+
+        Log.d(TAG, "=== UPLOAD FICHIER ===")
+        Log.d(TAG, "Fichier: ${file.name} (${file.length()} bytes)")
+        Log.d(TAG, "Description: $description")
+        Log.d(TAG, "ConversationId: $conversationId")
+        Log.d(TAG, "======================")
+
+        ApiClient.uploadFileToConversation(token, conversationId, file, description)
+            .enqueue(object : Callback<ConversationMessagesResponse> {
+                override fun onResponse(
+                    call: Call<ConversationMessagesResponse>,
+                    response: Response<ConversationMessagesResponse>
+                ) {
+                    progressDialog.dismiss()
+
+                    if (!isAdded) return
+
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Fichier envoyé avec succès", Toast.LENGTH_SHORT).show()
+
+                        // Recharger les messages pour voir le nouveau fichier
+                        loadMessages()
+
+                        // Nettoyer le fichier temporaire
+                        if (file.path.contains(requireContext().cacheDir.path)) {
+                            file.delete()
+                        }
+
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "Erreur upload: Code=${response.code()}, Body=$errorBody")
+
+                        val errorMessage = when (response.code()) {
+                            413 -> "Fichier trop volumineux"
+                            415 -> "Type de fichier non supporté"
+                            400 -> "Données invalides"
+                            404 -> "Conversation non trouvée"
+                            else -> "Erreur lors de l'envoi (${response.code()})"
+                        }
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<ConversationMessagesResponse>, t: Throwable) {
+                    progressDialog.dismiss()
+
+                    if (!isAdded) return
+
+                    Log.e(TAG, "Erreur réseau upload", t)
+                    Toast.makeText(context, "Erreur réseau: ${t.message}", Toast.LENGTH_LONG).show()
+                }
+            })
     }
 
     private fun setupRecyclerView() {
@@ -157,8 +499,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             onMessageRead = { messageId ->
                 webSocketService.markMessageAsRead(messageId)
             },
-            onMessageClick = { message, view -> // ✅ CALLBACK POUR POPUP
-                // Vérification supplémentaire (déjà faite dans l'adapter mais par sécurité)
+            onMessageClick = { message, view ->
                 if (message.expediteurId == myUserId) {
                     showQuickEditPopup(message, view)
                 }
@@ -171,11 +512,29 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             }
             adapter = this@PrivateConversationFragment.adapter
 
-            // Masquer popup lors du scroll
+            // ✅ CORRECTION: Scroll listener moins agressif
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                private var scrollDistance = 0
+
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
+
+                    // Fermer le popup d'édition
                     dismissCurrentPopup()
+
+                    // ✅ NOUVEAU: Fermer les options seulement après un scroll significatif
+                    scrollDistance += Math.abs(dy)
+                    if (scrollDistance > 100 && isOptionsVisible) { // 100px de scroll avant fermeture
+                        hideOptionsPanel()
+                        scrollDistance = 0
+                    }
+                }
+
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        scrollDistance = 0
+                    }
                 }
             })
         }
@@ -201,7 +560,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
                 true
             ).apply {
-                // Style du popup
                 setBackgroundDrawable(
                     android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
                 )
@@ -221,12 +579,11 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 dismissCurrentPopup()
             }
 
-            // ✅ NOUVEAU: Afficher le popup EN DESSOUS du message
-            // Pas de décalage horizontal, juste en dessous
+            // Afficher le popup en dessous du message
             currentPopupWindow?.showAsDropDown(
                 anchorView,
-                0,        // Pas de décalage horizontal (aligné avec le message)
-                8         // 8dp en dessous du message
+                0,
+                8
             )
 
             // Auto-fermeture après 5 secondes
@@ -259,7 +616,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             }
         }
 
-        // Gérer l'envoi avec la touche Entrée
         messageInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
                 val messageText = messageInput.text.toString().trim()
@@ -272,7 +628,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             }
         }
 
-        // Activer/désactiver le bouton selon le contenu
         messageInput.addTextChangedListener(object : android.text.TextWatcher {
             override fun afterTextChanged(s: android.text.Editable?) {
                 val hasText = !s.isNullOrBlank()
@@ -285,17 +640,14 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     }
 
     private fun setupWebSocketObservers() {
-        // Observer le statut de connexion
         webSocketService.connectionStatus.observe(viewLifecycleOwner, Observer { isConnected ->
             Log.d(TAG, "Statut connexion WebSocket: $isConnected")
             updateConnectionIndicator(isConnected)
 
-            // Activer/désactiver le bouton d'envoi
             val hasText = messageInput.text.toString().trim().isNotEmpty()
             sendButton.isEnabled = isConnected && hasText
             sendButton.alpha = if (sendButton.isEnabled) 1.0f else 0.5f
 
-            // Mettre à jour le placeholder du champ de texte
             messageInput.hint = if (isConnected) {
                 "Écrivez un message..."
             } else {
@@ -303,11 +655,9 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             }
         })
 
-        // Observer les nouveaux messages
         webSocketService.newPrivateMessage.observe(viewLifecycleOwner, Observer { message ->
             Log.d(TAG, "Nouveau message reçu via WebSocket: ${message.contenu} de ${message.expediteur}")
 
-            // Vérifier si le message concerne cette conversation
             val isFromOtherUser = message.expediteur == otherUserId
             val isFromMe = message.expediteur == myUserId
             val isForThisConversation = message.conversation == conversationId ||
@@ -318,7 +668,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 adapter.addMessage(message)
                 scrollToBottom()
 
-                // Marquer automatiquement comme lu si c'est un message reçu
                 if (isFromOtherUser) {
                     markMessageAsReadViaAPI(message.expediteur)
                 }
@@ -329,34 +678,25 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             }
         })
 
-        // Observer les messages lus
         webSocketService.messageRead.observe(viewLifecycleOwner, Observer { messageId ->
             Log.d(TAG, "Message marqué comme lu: $messageId")
-            // Mettre à jour l'affichage si nécessaire
             adapter.notifyDataSetChanged()
         })
 
-        // Observer les messages modifiés
         webSocketService.messageModified.observe(viewLifecycleOwner, Observer { message ->
             Log.d(TAG, "Message modifié: ${message.contenu}")
-            // Recharger les messages pour afficher la modification
             loadMessages()
         })
 
-        // Observer les messages supprimés
         webSocketService.messageDeleted.observe(viewLifecycleOwner, Observer { messageId ->
             Log.d(TAG, "Message supprimé: $messageId")
-            // Recharger les messages
             loadMessages()
         })
 
-        // Observer les confirmations d'envoi
         webSocketService.messageSent.observe(viewLifecycleOwner, Observer { messageId ->
             Log.d(TAG, "Message envoyé avec succès: $messageId")
-            // Optionnel : afficher une confirmation
         })
 
-        // Observer les erreurs
         webSocketService.error.observe(viewLifecycleOwner, Observer { error ->
             Log.e(TAG, "Erreur WebSocket: $error")
             showError(error)
@@ -367,14 +707,14 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         if (isConnected) {
             connectionIndicator.backgroundTintList =
                 android.content.res.ColorStateList.valueOf(
-                    android.graphics.Color.parseColor("#4CAF50") // Vert
+                    android.graphics.Color.parseColor("#4CAF50")
                 )
             connectionStatusText.text = "En ligne"
             connectionStatusText.setTextColor(android.graphics.Color.parseColor("#CCFFFFFF"))
         } else {
             connectionIndicator.backgroundTintList =
                 android.content.res.ColorStateList.valueOf(
-                    android.graphics.Color.parseColor("#F44336") // Rouge
+                    android.graphics.Color.parseColor("#F44336")
                 )
             connectionStatusText.text = "Hors ligne"
             connectionStatusText.setTextColor(android.graphics.Color.parseColor("#88FFFFFF"))
@@ -438,9 +778,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             })
     }
 
-    // ✅ NOUVEAU: Méthode principale d'envoi (simplifié)
     private fun sendMessageViaWebSocket(content: String) {
-        // ✅ TOUJOURS utiliser l'API REST pour l'envoi
         Log.d(TAG, "=== ENVOI DE MESSAGE ===")
         Log.d(TAG, "Contenu: '$content'")
         Log.d(TAG, "Vers conversationId: '$conversationId'")
@@ -449,7 +787,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         sendMessageViaAPI(content)
     }
 
-    // ✅ MÉTHODE D'ENVOI VIA API REST (debug amélioré)
     private fun sendMessageViaAPI(content: String) {
         val token = getAuthToken()
         if (token.isEmpty()) {
@@ -500,7 +837,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                         val messagesResponse = response.body()
                         Log.d(TAG, "Message envoyé avec succès: ${messagesResponse?.success}")
 
-                        // Recharger les messages pour voir le nouveau
                         loadMessages()
 
                         Log.d(TAG, "Messages rechargés après envoi")
@@ -531,7 +867,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     }
 
     private fun showMessageOptions(message: ConversationMessage, position: Int) {
-        // ✅ VÉRIFICATION: seulement pour ses propres messages
         if (message.expediteur != myUserId) {
             Log.d(TAG, "Options non disponibles - message d'un autre utilisateur")
             return
@@ -581,7 +916,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             .show()
     }
 
-    // ✅ NOUVEAU: Modifier message via API
     private fun editMessageViaAPI(message: ConversationMessage, newContent: String) {
         val token = getAuthToken()
         if (token.isEmpty()) {
@@ -594,7 +928,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             return
         }
 
-        // ✅ UTILISER le vrai ID du message
         val messageId = message.messageId
 
         if (messageId.isEmpty()) {
@@ -608,7 +941,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         Log.d(TAG, "nouveau contenu: '$newContent'")
         Log.d(TAG, "===============================")
 
-        // Désactiver temporairement l'interface
         val progressDialog = android.app.ProgressDialog(requireContext()).apply {
             setMessage("Modification en cours...")
             setCancelable(false)
@@ -635,7 +967,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
 
                         Toast.makeText(context, "Message modifié avec succès", Toast.LENGTH_SHORT).show()
 
-                        // Recharger les messages pour voir les changements
                         loadMessages()
                     } else {
                         val errorBody = response.errorBody()?.string()
@@ -662,7 +993,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             })
     }
 
-    // ✅ NOUVEAU: Supprimer message via API
     private fun deleteMessageViaAPI(message: ConversationMessage) {
         val token = getAuthToken()
         if (token.isEmpty()) {
@@ -675,7 +1005,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             return
         }
 
-        // ✅ UTILISER le vrai ID du message
         val messageId = message.messageId
 
         if (messageId.isEmpty()) {
@@ -710,7 +1039,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
 
                     if (response.isSuccessful) {
                         Toast.makeText(context, "Message supprimé", Toast.LENGTH_SHORT).show()
-                        loadMessages() // Recharger pour voir les changements
+                        loadMessages()
                     } else {
                         val errorBody = response.errorBody()?.string()
                         Log.e(TAG, "Erreur suppression: Code=${response.code()}, Body=$errorBody")
@@ -736,7 +1065,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     }
 
     private fun replyToMessage(message: ConversationMessage) {
-        // Implémenter la logique de réponse
         messageInput.setText("@${username} ")
         messageInput.setSelection(messageInput.text.length)
         messageInput.requestFocus()
@@ -767,7 +1095,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             .getString("username", "") ?: ""
     }
 
-    // Implémentation des callbacks WebSocket (compatibilité)
+    // Callbacks WebSocket (compatibilité)
     override fun onNewPrivateMessage(message: org.json.JSONObject) {
         // Déjà géré par les LiveData observers
     }
@@ -796,7 +1124,6 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
         // Déjà géré par les LiveData observers
     }
 
-    // ✅ NOUVEAU: Marquer message comme lu via API
     private fun markMessageAsReadViaAPI(messageId: String) {
         val token = getAuthToken()
         if (token.isEmpty()) return
@@ -808,13 +1135,11 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
 
         Log.d(TAG, "Marquage lecture: conversationId='$conversationId', messageId='$messageId'")
 
-        // Utiliser WebSocket en premier si connecté
         if (webSocketService.isConnected()) {
             webSocketService.markMessageAsRead(messageId)
             return
         }
 
-        // Fallback sur API REST
         ApiClient.markConversationMessageAsRead(token, conversationId, messageId)
             .enqueue(object : Callback<ConversationMessagesResponse> {
                 override fun onResponse(
@@ -835,27 +1160,26 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
     }
 
     private fun markUnreadMessagesAsRead() {
-        // ✅ NOUVEAU: Marquer les notifications comme lues
         notificationService.markPrivateConversationAsRead(requireContext(), conversationId)
-
         Log.d(TAG, "Notifications marquées comme lues pour conversation: $conversationId")
     }
 
     override fun onResume() {
         super.onResume()
-        // Assurer que WebSocket est connecté
         val token = getAuthToken()
         if (token.isNotEmpty() && !webSocketService.isConnected()) {
             webSocketService.initialize(token)
         }
-
-        // ✅ NOUVEAU: Marquer les messages comme lus quand on entre dans la conversation
         markUnreadMessagesAsRead()
     }
 
     override fun onPause() {
         super.onPause()
-        dismissCurrentPopup() // Fermer le popup si l'utilisateur quitte
+        dismissCurrentPopup()
+        // ✅ NOUVEAU: Masquer les options quand on quitte
+        if (isOptionsVisible) {
+            hideOptionsPanel()
+        }
         markUnreadMessagesAsRead()
     }
 
