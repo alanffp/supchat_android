@@ -157,8 +157,11 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             onMessageRead = { messageId ->
                 webSocketService.markMessageAsRead(messageId)
             },
-            onMessageClick = { message, view -> // ✅ NOUVEAU
-                showQuickEditPopup(message, view)
+            onMessageClick = { message, view -> // ✅ CALLBACK POUR POPUP
+                // Vérification supplémentaire (déjà faite dans l'adapter mais par sécurité)
+                if (message.expediteurId == myUserId) {
+                    showQuickEditPopup(message, view)
+                }
             }
         )
 
@@ -168,7 +171,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             }
             adapter = this@PrivateConversationFragment.adapter
 
-            // ✅ NOUVEAU: Masquer popup lors du scroll
+            // Masquer popup lors du scroll
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
@@ -177,6 +180,7 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
             })
         }
     }
+
     private var currentPopupWindow: android.widget.PopupWindow? = null
 
     private fun showQuickEditPopup(message: ConversationMessage, anchorView: View) {
@@ -217,15 +221,12 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 dismissCurrentPopup()
             }
 
-            // Calculer la position du popup
-            val location = IntArray(2)
-            anchorView.getLocationOnScreen(location)
-
-            // Afficher le popup à côté du message (à gauche du message)
+            // ✅ NOUVEAU: Afficher le popup EN DESSOUS du message
+            // Pas de décalage horizontal, juste en dessous
             currentPopupWindow?.showAsDropDown(
                 anchorView,
-                -popupView.measuredWidth, // Décalage à gauche
-                -anchorView.height / 2    // Centré verticalement
+                0,        // Pas de décalage horizontal (aligné avec le message)
+                8         // 8dp en dessous du message
             )
 
             // Auto-fermeture après 5 secondes
@@ -233,11 +234,11 @@ class PrivateConversationFragment : Fragment(), WebSocketService.MessageListener
                 dismissCurrentPopup()
             }, 5000)
 
-            Log.d(TAG, "Popup d'édition affiché pour message: ${message.messageId}")
+            Log.d(TAG, "Popup d'édition affiché en dessous du message: ${message.id}")
 
         } catch (e: Exception) {
             Log.e(TAG, "Erreur lors de l'affichage du popup", e)
-            Toast.makeText(context, "Erreur lors de l'affichage du menu", Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, "Erreur lors de l'affichage du menu", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 

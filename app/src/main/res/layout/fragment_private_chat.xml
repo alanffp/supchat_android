@@ -88,43 +88,149 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/top_bar"
-        android:layout_above="@+id/message_input_container"
+        android:layout_above="@+id/input_container"
         android:padding="8dp" />
 
-    <!-- Zone de saisie de message -->
+    <!-- ✅ NOUVEAU: Container principal pour input + options -->
     <LinearLayout
-        android:id="@+id/message_input_container"
+        android:id="@+id/input_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:padding="8dp"
         android:background="@color/DarkBlue">
-        
-        <EditText
-            android:id="@+id/message_input"
-            android:layout_width="0dp"
+
+        <!-- ✅ NOUVEAU: Zone d'options (masquée par défaut) -->
+        <LinearLayout
+            android:id="@+id/options_container"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="Écrivez un message..."
-            android:textColorHint="#78FFFFFF"
-            android:textColor="@android:color/black"
+            android:orientation="vertical"
             android:padding="12dp"
-            android:background="@drawable/message_input_background"
-            android:imeOptions="actionSend"
-            android:inputType="textMultiLine"
-            android:maxLines="4" />
-        
-        <ImageButton
-            android:id="@+id/send_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@android:drawable/ic_menu_send"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Envoyer"
-            android:layout_marginStart="8dp"
-            android:tint="@color/colorAccent"
-            android:enabled="false" />
+            android:visibility="gone"
+            android:background="#34495E">
+
+            <!-- Boutons principaux -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="start"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/poll_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="📊 Sondage"
+                    android:textSize="12sp"
+                    android:backgroundTint="#9B59B6"
+                    android:textColor="@android:color/white"
+                    android:layout_marginEnd="8dp"
+                    android:paddingHorizontal="16dp"
+                    style="@style/Widget.MaterialComponents.Button" />
+
+                <Button
+                    android:id="@+id/file_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="📎 Fichier"
+                    android:textSize="12sp"
+                    android:backgroundTint="#3498DB"
+                    android:textColor="@android:color/white"
+                    android:paddingHorizontal="16dp"
+                    style="@style/Widget.MaterialComponents.Button" />
+
+            </LinearLayout>
+
+            <!-- Boutons pour photos/média -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="start">
+
+                <ImageButton
+                    android:id="@+id/camera_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_menu_camera"
+                    android:background="@drawable/circle_button_background"
+                    android:backgroundTint="#E74C3C"
+                    android:contentDescription="Appareil photo"
+                    android:layout_marginEnd="8dp" />
+
+                <ImageButton
+                    android:id="@+id/gallery_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    android:background="@drawable/circle_button_background"
+                    android:backgroundTint="#F39C12"
+                    android:contentDescription="Galerie"
+                    android:layout_marginEnd="8dp" />
+
+                <ImageButton
+                    android:id="@+id/video_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_media_play"
+                    android:background="@drawable/circle_button_background"
+                    android:backgroundTint="#2ECC71"
+                    android:contentDescription="Vidéo"
+                    android:layout_marginEnd="8dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Zone de saisie de message (existante mais modifiée) -->
+        <LinearLayout
+            android:id="@+id/message_input_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <!-- ✅ NOUVEAU: Bouton + / X -->
+            <ImageButton
+                android:id="@+id/plus_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_add"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Options"
+                android:layout_gravity="center_vertical"
+                android:tint="@color/colorAccent" />
+
+            <EditText
+                android:id="@+id/message_input"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Écrivez un message..."
+                android:textColorHint="#78FFFFFF"
+                android:textColor="@android:color/black"
+                android:padding="12dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/message_input_background"
+                android:imeOptions="actionSend"
+                android:inputType="textMultiLine"
+                android:maxLines="4" />
+
+            <ImageButton
+                android:id="@+id/send_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_send"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Envoyer"
+                android:layout_marginStart="8dp"
+                android:tint="@color/colorAccent"
+                android:enabled="false" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
 </RelativeLayout>

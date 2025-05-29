@@ -42,6 +42,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.util.concurrent.TimeUnit
 
@@ -434,5 +435,32 @@ object ApiClient {
     fun markAllNotificationsAsRead(token: String): Call<NotificationsResponse> {
         return instance.markAllNotificationsAsRead("Bearer $token")
 
+    }
+    fun uploadFileToConversation(
+        token: String,
+        conversationId: String,
+        file: File,
+        content: String? = null,
+        messageId: String? = null
+    ): Call<ConversationMessagesResponse> {
+
+        val requestFile = file.asRequestBody("*/*".toMediaTypeOrNull())
+        val filePart = MultipartBody.Part.createFormData("fichier", file.name, requestFile)
+
+        val contentPart = content?.let {
+            RequestBody.create("text/plain".toMediaTypeOrNull(), it)
+        }
+
+        val messageIdPart = messageId?.let {
+            RequestBody.create("text/plain".toMediaTypeOrNull(), it)
+        }
+
+        return instance.uploadFileToConversation(
+            "Bearer $token",
+            conversationId,
+            filePart,
+            contentPart,
+            messageIdPart
+        )
     }
 }

@@ -380,5 +380,15 @@ interface ApiService {
     fun markAllNotificationsAsRead(
         @Header("Authorization") token: String
     ): Call<NotificationsResponse>
+
+    @Multipart
+    @POST("/api/v1/fichiers/conversation/{conversationId}")
+    fun uploadFileToConversation(
+        @Header("Authorization") token: String,
+        @Path("conversationId") conversationId: String,
+        @Part fichier: MultipartBody.Part,
+        @Part("contenu") contenu: RequestBody? = null,
+        @Part("messageId") messageId: RequestBody? = null
+    ): Call<ConversationMessagesResponse>
 }
 

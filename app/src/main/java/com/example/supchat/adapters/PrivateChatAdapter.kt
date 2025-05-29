@@ -19,7 +19,7 @@ class PrivateChatAdapter(
     private val currentUserId: String,
     private val onMessageLongClick: (ConversationMessage, Int) -> Unit,
     private val onMessageRead: (String) -> Unit,
-    private val onMessageClick: (ConversationMessage, View) -> Unit // ✅ NOUVEAU
+    private val onMessageClick: (ConversationMessage, View) -> Unit // ✅ CALLBACK POUR POPUP
 ) : RecyclerView.Adapter<PrivateChatAdapter.MessageViewHolder>() {
 
     private var messages = mutableListOf<ConversationMessage>()
@@ -54,8 +54,9 @@ class PrivateChatAdapter(
             // Vérifier si le message n'est pas lu par l'utilisateur actuel
             // et que ce n'est pas son propre message
             if (message.expediteur != currentUserId && !message.isReadBy(currentUserId)) {
-                // Utiliser l'index comme identifiant pour le moment
-                onMessageRead(index.toString())
+                // Utiliser l'ID du message si disponible, sinon l'index
+                val messageId = if (message.id.isNotEmpty()) message.id else index.toString()
+                onMessageRead(messageId)
             }
         }
     }
@@ -82,15 +83,18 @@ class PrivateChatAdapter(
             // Afficher les réactions si présentes
             displayReactions(message, isMyMessage)
 
-            // Configurer le long click uniquement sur ses propres messages
-            configureLongClick(message, isMyMessage)
+            // ✅ CORRECTION: Appeler la configuration des listeners
+            configureClickListeners(message, isMyMessage)
         }
 
         private fun configureClickListeners(message: ConversationMessage, isMyMessage: Boolean) {
             if (isMyMessage) {
+                // ✅ UTILISER LA BONNE VUE COMME ANCRE POUR LE POPUP
+                val targetView = sentMessageLayout
+
                 // Clic simple → Popup d'édition
-                itemView.setOnClickListener { view ->
-                    onMessageClick(message, view)
+                targetView.setOnClickListener {
+                    onMessageClick(message, targetView) // ✅ PASSER LA VUE D'ANCRAGE
                 }
 
                 // Long clic → Menu complet (existant)
@@ -99,13 +103,18 @@ class PrivateChatAdapter(
                     true
                 }
             } else {
-                // Messages des autres : pas d'interaction
-                itemView.setOnClickListener(null)
-                itemView.setOnLongClickListener(null)
-                itemView.isClickable = false
-                itemView.isLongClickable = false
+                // Messages des autres : pas d'interaction pour l'édition
+                sentMessageLayout.setOnClickListener(null)
+                receivedMessageLayout.setOnClickListener(null)
+
+                // Mais garder le long click si nécessaire pour d'autres actions
+                itemView.setOnLongClickListener {
+                    onMessageLongClick(message, adapterPosition)
+                    true
+                }
             }
         }
+
         private fun showSentMessage(message: ConversationMessage) {
             sentMessageLayout.visibility = View.VISIBLE
             receivedMessageLayout.visibility = View.GONE
@@ -161,18 +170,6 @@ class PrivateChatAdapter(
                     val currentText = receivedMessageText.text.toString()
                     receivedMessageText.text = "$currentText\n$reactionsText"
                 }
-            }
-        }
-
-        private fun configureLongClick(message: ConversationMessage, isMyMessage: Boolean) {
-            if (isMyMessage) {
-                itemView.setOnLongClickListener {
-                    onMessageLongClick(message, adapterPosition)
-                    true
-                }
-            } else {
-                itemView.setOnLongClickListener(null)
-                itemView.isLongClickable = false
             }
         }
 

@@ -17,7 +17,7 @@ class ConversationMessagesAdapter(
 ) : RecyclerView.Adapter<ConversationMessagesAdapter.MessageViewHolder>() {
 
     interface OnMessageClickListener {
-        fun onMessageClick(message: ConversationMessage)
+        fun onMessageClick(message: ConversationMessage, view: View) // ✅ AJOUT: View pour ancrage popup
         fun onMessageLongClick(message: ConversationMessage, position: Int): Boolean
     }
 
@@ -62,14 +62,14 @@ class ConversationMessagesAdapter(
             itemView.findViewById(R.id.received_message_time)
 
         fun bind(message: ConversationMessage, currentUserId: String) {
-            // CORRECTION: Utiliser expediteurId au lieu de senderId
+            // Utiliser expediteurId au lieu de senderId (comme dans votre code)
             val isSentByMe = message.expediteurId == currentUserId
 
             // Configurer la visibilité des layouts
             sentMessageLayout.visibility = if (isSentByMe) View.VISIBLE else View.GONE
             receivedMessageLayout.visibility = if (isSentByMe) View.GONE else View.VISIBLE
 
-            // Formater la date - CORRECTION: Utiliser horodatage au lieu de createdAt
+            // Formater la date - Utiliser horodatage
             val formattedDate = try {
                 val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
                     .parse(message.horodatage)
@@ -89,7 +89,7 @@ class ConversationMessagesAdapter(
                         else -> "📎 ${file.nom}"
                     }
                 }
-                message.contenu.isNotEmpty() -> message.contenu // CORRECTION: Utiliser contenu au lieu de content
+                message.contenu.isNotEmpty() -> message.contenu
                 else -> "[Message vide]"
             }
 
@@ -126,11 +126,19 @@ class ConversationMessagesAdapter(
                 }
             }
 
-            // Configurer les listeners
-            itemView.setOnClickListener {
-                onMessageClickListener?.onMessageClick(message)
+            // ✅ CORRECTION: Configurer les listeners correctement
+            // Déterminer quelle vue utiliser pour l'ancrage du popup
+            val targetView = if (isSentByMe) sentMessageLayout else receivedMessageLayout
+
+            // Click simple - uniquement pour les messages de l'utilisateur connecté
+            targetView.setOnClickListener {
+                if (isSentByMe) {
+                    // ✅ CORRECTION: Utiliser targetView comme ancre pour le popup
+                    onMessageClickListener?.onMessageClick(message, targetView)
+                }
             }
 
+            // Long click - pour tous les messages (pour d'autres actions si nécessaire)
             itemView.setOnLongClickListener {
                 onMessageClickListener?.onMessageLongClick(message, adapterPosition) ?: false
             }
