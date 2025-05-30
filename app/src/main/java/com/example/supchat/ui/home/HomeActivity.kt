@@ -29,6 +29,7 @@ import androidx.core.content.edit
 import com.example.supchat.SupChatApplication
 import com.example.supchat.api.ApiClient
 import com.example.supchat.socket.WebSocketService
+import com.example.supchat.ui.conversation.CreateConversationFragment
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
@@ -67,6 +68,11 @@ class HomeActivity : AppCompatActivity() {
         profileButton = findViewById(R.id.profile_text)
         searchUsersButton = findViewById(R.id.search_users_text)
 
+        val createConversationText = findViewById<TextView>(R.id.create_conversation_text)
+        createConversationText.setOnClickListener {
+            drawerLayout.closeDrawer(GravityCompat.END)
+            showCreateConversationFragment()
+        }
         // Initialiser le bouton de gestion des workspaces
         val manageWorkspacesButton = findViewById<TextView>(R.id.manage_workspaces_text)
         manageWorkspacesButton.setOnClickListener {
@@ -575,6 +581,14 @@ class HomeActivity : AppCompatActivity() {
         val workspaceInvitationsFragment = WorkspaceInvitationsFragment.newInstance(workspaceId)
         supportFragmentManager.beginTransaction()
             .replace(R.id.main_content_container, workspaceInvitationsFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    private fun showCreateConversationFragment() {
+        val fragment = CreateConversationFragment.newInstance()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.main_content_container, fragment)
             .addToBackStack(null)
             .commit()
     }

@@ -239,42 +239,10 @@ class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener
             return
         }
 
-        Log.d(TAG, "Chargement des messages privés...")
+        Log.d(TAG, "Chargement des conversations privées et groupes...")
 
-        ApiClient.getPrivateMessages(token).enqueue(object : Callback<PrivateMessagesResponse> {
-            override fun onResponse(
-                call: Call<PrivateMessagesResponse>,
-                response: Response<PrivateMessagesResponse>
-            ) {
-                if (!isAdded) return
-
-                progressBar.visibility = View.GONE
-
-                if (response.isSuccessful) {
-                    val privateMessagesResponse = response.body()
-                    Log.d(TAG, "Réponse reçue: $privateMessagesResponse")
-
-                    val newConversations = privateMessagesResponse?.data ?: emptyList()
-                    Log.d(TAG, "Nombre de conversations: ${newConversations.size}")
-
-                    // ✅ NOUVEAU: Sauvegarder dans la liste locale
-                    conversations.clear()
-                    conversations.addAll(newConversations)
-
-                    updateUI(conversations)
-                } else {
-                    Log.e(TAG, "Erreur API: ${response.code()}")
-                    showError("Erreur: ${response.code()} - ${response.message()}")
-                }
-            }
-
-            override fun onFailure(call: Call<PrivateMessagesResponse>, t: Throwable) {
-                if (!isAdded) return
-                progressBar.visibility = View.GONE
-                Log.e(TAG, "Erreur de connexion API", t)
-                showError("Erreur de connexion: ${t.message}")
-            }
-        })
+        // ✅ NOUVEAU : Faire 2 appels en parallèle
+        loadPrivateMessagesAndGroups(token)
     }
 
     private fun updateUI(conversations: List<PrivateMessageItem>) {
@@ -386,5 +354,104 @@ class PrivateMessagesListFragment : Fragment(), WebSocketService.MessageListener
         // ✅ NOUVEAU: Supprimer le listener WebSocket
         webSocketService.removeMessageListener(this)
         Log.d(TAG, "WebSocket listener supprimé")
+    }
+
+    private fun loadPrivateMessagesAndGroups(token: String) {
+        var privateMessagesLoaded = false
+        var groupsLoaded = false
+        var privateConversations = listOf<PrivateMessageItem>()
+        var groupConversations = listOf<PrivateMessageItem>()
+
+        // Fonction pour combiner les résultats quand les 2 appels sont terminés
+        fun combineResults() {
+            if (privateMessagesLoaded && groupsLoaded) {
+                val allConversations = mutableListOf<PrivateMessageItem>()
+                allConversations.addAll(privateConversations)
+                allConversations.addAll(groupConversations)
+
+                // ✅ TRIER par date du dernier message
+                allConversations.sortByDescending { conversation ->
+                    conversation.lastMessage.horodatage
+                }
+
+                conversations.clear()
+                conversations.addAll(allConversations)
+
+                progressBar.visibility = View.GONE
+                updateUI(allConversations)
+
+                Log.d(TAG, "Total conversations: ${allConversations.size} (${privateConversations.size} privées + ${groupConversations.size} groupes)")
+            }
+        }
+
+        // ✅ APPEL 1 : Messages privés existants
+        ApiClient.getPrivateMessages(token).enqueue(object : Callback<PrivateMessagesResponse> {
+            override fun onResponse(
+                call: Call<PrivateMessagesResponse>,
+                response: Response<PrivateMessagesResponse>
+            ) {
+                if (!isAdded) return
+
+                if (response.isSuccessful) {
+                    privateConversations = response.body()?.data ?: emptyList()
+                    Log.d(TAG, "Conversations privées chargées: ${privateConversations.size}")
+                } else {
+                    Log.e(TAG, "Erreur chargement conversations privées: ${response.code()}")
+                }
+
+                privateMessagesLoaded = true
+                combineResults()
+            }
+
+            override fun onFailure(call: Call<PrivateMessagesResponse>, t: Throwable) {
+                if (!isAdded) return
+                Log.e(TAG, "Erreur réseau conversations privées", t)
+                privateMessagesLoaded = true
+                combineResults()
+            }
+        })
+
+        // ✅ APPEL 2 : Groupes créés
+        ApiClient.getAllConversations(token).enqueue(object : Callback<PrivateMessagesResponse> {
+            override fun onResponse(
+                call: Call<PrivateMessagesResponse>,
+                response: Response<PrivateMessagesResponse>
+            ) {
+                if (!isAdded) return
+
+                if (response.isSuccessful) {
+                    val allConversations = response.body()?.data ?: emptyList()
+                    // ✅ FILTRER seulement les groupes
+                    groupConversations = allConversations.filter { conversation ->
+                        // Supposons qu'il y ait un champ pour identifier les groupes
+                        // ou plus de 2 participants = groupe
+                        isGroupConversation(conversation)
+                    }
+                    Log.d(TAG, "Groupes chargés: ${groupConversations.size}")
+                } else {
+                    Log.e(TAG, "Erreur chargement groupes: ${response.code()}")
+                }
+
+                groupsLoaded = true
+                combineResults()
+            }
+
+            override fun onFailure(call: Call<PrivateMessagesResponse>, t: Throwable) {
+                if (!isAdded) return
+                Log.e(TAG, "Erreur réseau groupes", t)
+                groupsLoaded = true
+                combineResults()
+            }
+        })
+    }
+
+    private fun isGroupConversation(conversation: PrivateMessageItem): Boolean {
+        // ✅ UTILISER LE CHAMP isGroup EXISTANT
+        return conversation.isGroup
+    }
+
+    fun refreshConversations() {
+        Log.d(TAG, "Rafraîchissement des conversations demandé")
+        loadPrivateMessages()
     }
 }

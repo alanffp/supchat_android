@@ -18,9 +18,9 @@
             android:id="@+id/back_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Retour" />
+            android:contentDescription="Retour"
+            android:src="@android:drawable/ic_menu_close_clear_cancel" />
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/user_profile_image"
@@ -72,6 +72,90 @@
 
         </LinearLayout>
 
+        <!-- ✅ NOUVEAU: Bouton menu participants (3 barres) -->
+        <ImageButton
+            android:id="@+id/participants_menu_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_menu_participants"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Gestion des participants"
+            android:tint="@android:color/white"
+            android:layout_marginEnd="8dp" />
+
+    </LinearLayout>
+
+    <!-- ✅ NOUVEAU: Panneau de gestion des participants -->
+    <LinearLayout
+        android:id="@+id/participants_panel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_bar"
+        android:orientation="vertical"
+        android:background="#34495E"
+        android:visibility="gone"
+        android:elevation="4dp"
+        android:translationY="-100dp">
+
+        <!-- En-tête du panneau -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Participants"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/invite_participant_button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="+ Inviter"
+                android:textSize="12sp"
+                android:backgroundTint="#3498DB"
+                android:textColor="@android:color/white"
+                android:paddingHorizontal="12dp" />
+
+        </LinearLayout>
+
+        <!-- Liste des participants -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/participants_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="200dp"
+            android:paddingHorizontal="8dp"
+            android:paddingBottom="8dp" />
+
+        <!-- Bouton quitter la conversation -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="#E74C3C"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/leave_conversation_button"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="🚪 Quitter la conversation"
+                android:textSize="12sp"
+                android:backgroundTint="#C0392B"
+                android:textColor="@android:color/white"
+                android:paddingHorizontal="16dp" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
     <!-- Indicateur de chargement -->
@@ -91,7 +175,7 @@
         android:layout_above="@+id/input_container"
         android:padding="8dp" />
 
-    <!-- ✅ Container principal pour input + options -->
+    <!-- Container principal pour input + options -->
     <LinearLayout
         android:id="@+id/input_container"
         android:layout_width="match_parent"
@@ -147,7 +231,7 @@
 
         </LinearLayout>
 
-        <!-- ✅ Zone d'options EN DESSOUS de la zone de saisie -->
+        <!-- Zone d'options EN DESSOUS de la zone de saisie -->
         <LinearLayout
             android:id="@+id/options_container"
             android:layout_width="match_parent"

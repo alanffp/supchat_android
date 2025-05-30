@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/colorPrimary">
+
+    <!-- Titre -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="👥 Nom du groupe"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Description -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Choisissez un nom pour votre groupe.\nVous pourrez ensuite ajouter des participants."
+        android:textColor="#CCFFFFFF"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Champ de saisie -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:hint="Nom du groupe">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/group_name_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: Équipe projet, Amis, Famille..."
+            android:textColor="@android:color/white"
+            android:textColorHint="#99FFFFFF"
+            android:maxLines="1"
+            android:inputType="text" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Boutons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/cancel_group_name_button"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="Annuler"
+            android:textSize="14sp"
+            android:backgroundTint="#95A5A6"
+            android:textColor="@android:color/white"
+            android:layout_marginEnd="12dp" />
+
+        <Button
+            android:id="@+id/confirm_group_name_button"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="✓ Confirmer"
+            android:textSize="14sp"
+            android:backgroundTint="#27AE60"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+
+</LinearLayout>

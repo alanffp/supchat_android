@@ -1,6 +1,8 @@
 package com.example.supchat.api
 
 import com.example.supchat.models.request.AccountDeleteRequest
+import com.example.supchat.models.request.AddParticipantRequest
+import com.example.supchat.models.request.CreateConversationRequest
 import com.example.supchat.models.request.ForgotPasswordRequest
 import com.example.supchat.models.request.LoginRequest
 import com.example.supchat.models.response.LoginResponse
@@ -32,6 +34,7 @@ import com.example.supchat.models.response.ThemeResponse
 import com.example.supchat.models.response.UserProfileResponse
 import com.example.supchat.models.response.UserSearchResponse
 import com.example.supchat.models.response.WorkspacesResponse
+import com.example.supchat.models.response.messageprivate.ConversationDetailsResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
 import com.example.supchat.models.response.notifications.NotificationsResponse
@@ -391,5 +394,43 @@ interface ApiService {
         @Part("contenu") contenu: RequestBody? = null,
         @Part("messageId") messageId: RequestBody? = null
     ): Call<ConversationMessagesResponse>
+
+    @GET("/api/v1/conversations/{id}")
+    fun getConversationDetails(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: String
+    ): Call<ConversationDetailsResponse>
+
+    @POST("/api/v1/conversations/{id}/participants")
+    fun addParticipantToConversation(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: String,
+        @Body request: AddParticipantRequest
+    ): Call<ConversationDetailsResponse>
+
+    @DELETE("/api/v1/conversations/{id}/participants/{userId}")
+    fun removeParticipantFromConversation(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: String,
+        @Path("userId") userId: String
+    ): Call<ConversationDetailsResponse>
+
+    @DELETE("/api/v1/conversations/{id}/leave")
+    fun leaveConversation(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: String
+    ): Call<ConversationDetailsResponse>
+
+    // Créer une conversation
+    @POST("/api/v1/conversations")
+    fun createConversation(
+        @Header("Authorization") token: String,
+        @Body request: CreateConversationRequest
+    ): Call<ConversationDetailsResponse>
+
+    @GET("/api/v1/conversations")
+    fun getAllConversations(
+        @Header("Authorization") token: String
+    ): Call<PrivateMessagesResponse>
 }
 

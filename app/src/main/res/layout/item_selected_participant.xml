@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Créez ce fichier : res/layout/item_selected_participant.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="4dp"
+    android:layout_margin="4dp"
+    android:background="@android:color/holo_blue_dark">
+
+    <!-- Avatar -->
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/selected_participant_avatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/default_avatar" />
+
+    <!-- Nom -->
+    <TextView
+        android:id="@+id/selected_participant_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nom"
+        android:textColor="@android:color/white"
+        android:textSize="10sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:layout_marginTop="2dp" />
+
+    <!-- Bouton de suppression -->
+    <ImageButton
+        android:id="@+id/remove_selected_participant_button"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:background="@android:color/holo_red_light"
+        android:contentDescription="Supprimer participant"
+        android:layout_marginTop="2dp" />
+
+</LinearLayout>

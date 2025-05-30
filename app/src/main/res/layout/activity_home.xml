@@ -148,6 +148,20 @@
             android:background="?attr/selectableItemBackground"
             android:contentDescription="Accéder aux messages privés" />
         
+        <!-- Créer une conversation -->
+        <TextView
+            android:id="@+id/create_conversation_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="➕ Créer une conversation"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:contentDescription="Créer une nouvelle conversation" />
+            
         <!-- Gestion des workspaces -->
         <TextView
             android:id="@+id/manage_workspaces_text"

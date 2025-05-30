@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Créez ce fichier : res/layout/fragment_create_conversation.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/colorPrimary"
+    android:padding="16dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Créer une conversation"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Annuler"
+            android:textSize="12sp"
+            android:backgroundTint="#95A5A6"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+
+    <!-- Type de conversation avec bouton nom -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <CheckBox
+            android:id="@+id/is_group_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Conversation de groupe"
+            android:textColor="@android:color/white"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/set_group_name_button"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="📝 Définir nom"
+            android:textSize="12sp"
+            android:backgroundTint="#3498DB"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            android:paddingHorizontal="12dp" />
+
+    </LinearLayout>
+
+    <!-- Affichage du nom du groupe -->
+    <TextView
+        android:id="@+id/group_name_display"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📝 Nom du groupe: Mon Super Groupe"
+        android:textColor="#4CAF50"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp"
+        android:padding="8dp"
+        android:background="@android:color/darker_gray" />
+
+    <!-- Participants sélectionnés -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Participants sélectionnés:"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/selected_participants_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Recherche d'utilisateurs -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Rechercher des utilisateurs à ajouter:"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/search_users_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Rechercher par nom d'utilisateur..."
+            android:textColor="@android:color/white"
+            android:textColorHint="#CCFFFFFF" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Résultats de recherche -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/search_users_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Bouton de création -->
+    <Button
+        android:id="@+id/create_conversation_button"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Créer la conversation"
+        android:textSize="16sp"
+        android:backgroundTint="#27AE60"
+        android:textColor="@android:color/white"
+        android:enabled="false" />
+
+</LinearLayout>

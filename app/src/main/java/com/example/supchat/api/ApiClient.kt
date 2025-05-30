@@ -1,9 +1,12 @@
 package com.example.supchat.api
 
+import com.example.supchat.api.deserializer.SafeConversationDetailsResponseDeserializer
 import com.example.supchat.api.deserializer.SafeConversationMessagesResponseDeserializer
 import com.example.supchat.api.deserializer.SafeConversationsResponseDeserializer
 import com.example.supchat.api.deserializer.SafePrivateMessagesResponseDeserializer
 import com.example.supchat.models.request.AccountDeleteRequest
+import com.example.supchat.models.request.AddParticipantRequest
+import com.example.supchat.models.request.CreateConversationRequest
 import com.example.supchat.models.request.MemberRoleUpdateRequest
 import com.example.supchat.models.request.Message.MessageRequest
 import com.example.supchat.models.request.Message.ReactionRequest
@@ -31,6 +34,7 @@ import com.example.supchat.models.response.ThemeResponse
 import com.example.supchat.models.response.UserProfileResponse
 import com.example.supchat.models.response.UserSearchResponse
 import com.example.supchat.models.response.WorkspacesResponse
+import com.example.supchat.models.response.messageprivate.ConversationDetailsResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
 import com.example.supchat.models.response.notifications.NotificationsResponse
@@ -69,6 +73,10 @@ object ApiClient {
             .registerTypeAdapter(
                 PrivateMessagesResponse::class.java,
                 SafePrivateMessagesResponseDeserializer()
+            )
+            .registerTypeAdapter(
+                ConversationDetailsResponse::class.java,
+                SafeConversationDetailsResponseDeserializer()
             )
             .create()
 
@@ -462,5 +470,48 @@ object ApiClient {
             contentPart,
             messageIdPart
         )
+    }
+    fun getConversationDetails(
+        token: String,
+        conversationId: String
+    ): Call<ConversationDetailsResponse> {
+        return instance.getConversationDetails("Bearer $token", conversationId)
+    }
+
+    fun addParticipantToConversation(
+        token: String,
+        conversationId: String,
+        userId: String
+    ): Call<ConversationDetailsResponse> {
+        val request = AddParticipantRequest(userId)
+        return instance.addParticipantToConversation("Bearer $token", conversationId, request)
+    }
+
+    fun removeParticipantFromConversation(
+        token: String,
+        conversationId: String,
+        userId: String
+    ): Call<ConversationDetailsResponse> {
+        return instance.removeParticipantFromConversation("Bearer $token", conversationId, userId)
+    }
+
+    fun leaveConversation(
+        token: String,
+        conversationId: String
+    ): Call<ConversationDetailsResponse> {
+        return instance.leaveConversation("Bearer $token", conversationId)
+    }
+    fun createConversation(
+        token: String,
+        nom: String? = null,
+        participants: List<String>,
+        estGroupe: Boolean = false
+    ): Call<ConversationDetailsResponse> {
+        val request = CreateConversationRequest(nom, participants, estGroupe)
+        return instance.createConversation("Bearer $token", request)
+    }
+
+    fun getAllConversations(token: String): Call<PrivateMessagesResponse> {
+        return instance.getAllConversations("Bearer $token")
     }
 }

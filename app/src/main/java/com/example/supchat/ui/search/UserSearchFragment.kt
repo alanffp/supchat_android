@@ -21,37 +21,52 @@ import com.example.supchat.api.ApiClient
 import com.example.supchat.models.response.UserSearchData
 import com.example.supchat.models.response.UserSearchResponse
 import com.example.supchat.ui.home.HomeActivity
-import com.example.supchat.ui.chat.PrivateConversationFragment // CORRECTION: Import correct
+import com.example.supchat.ui.chat.PrivateConversationFragment
 import com.google.android.material.textfield.TextInputEditText
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.net.URLEncoder
 import java.util.Timer
 import java.util.TimerTask
 
 class UserSearchFragment : Fragment(), UserSearchAdapter.OnUserClickListener {
-    // Variables existantes
+
+    companion object {
+        private const val TAG = "UserSearchFragment"
+        private const val SEARCH_DELAY_MS = 500L
+
+        fun newInstance(): UserSearchFragment {
+            return UserSearchFragment()
+        }
+
+        // ✅ NOUVEAU: Pour les invitations avec exclusions
+        fun newInstanceForInvitation(excludedUserIds: Set<String>): UserSearchFragment {
+            val fragment = UserSearchFragment()
+            fragment.excludedUserIds = excludedUserIds
+            fragment.isInvitationMode = true
+            return fragment
+        }
+    }
+
+    // ==================== VARIABLES ====================
+
+    // Vues
     private lateinit var searchEditText: TextInputEditText
     private lateinit var resultsInfoText: TextView
     private lateinit var searchResultsRecyclerView: RecyclerView
     private lateinit var searchProgress: ProgressBar
     private lateinit var userSearchAdapter: UserSearchAdapter
 
+    // Logique de recherche
     private var searchTimer: Timer? = null
-    private val SEARCH_DELAY_MS = 500L
 
-    // Ajouter ces deux variables pour la sélection d'utilisateurs
-    private var userSelectedCallback: ((String) -> Unit)? = null
-    private var selectionMode = false // Mode pour distinguer entre recherche normale et sélection
+    // ✅ NOUVEAU: Gestion des modes et callbacks
+    private var excludedUserIds: Set<String> = emptySet()
+    private var isInvitationMode = false
+    private var userSelectedCallback: ((UserSearchData) -> Unit)? = null
+    private var userSelectedByIdCallback: ((String) -> Unit)? = null
 
-    companion object {
-        private const val TAG = "UserSearchFragment"
-
-        fun newInstance(): UserSearchFragment {
-            return UserSearchFragment()
-        }
-    }
+    // ==================== LIFECYCLE ====================
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -60,25 +75,37 @@ class UserSearchFragment : Fragment(), UserSearchAdapter.OnUserClickListener {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_user_search, container, false)
 
-        // Initialiser les vues
-        searchEditText = view.findViewById(R.id.search_edit_text)
-        resultsInfoText = view.findViewById(R.id.results_info_text)
-        searchResultsRecyclerView = view.findViewById(R.id.search_results_recycler_view)
-        searchProgress = view.findViewById(R.id.search_progress)
-
-        // Configurer le RecyclerView
-        searchResultsRecyclerView.layoutManager = LinearLayoutManager(context)
-        userSearchAdapter = UserSearchAdapter(requireContext(), onUserClickListener = this)
-        searchResultsRecyclerView.adapter = userSearchAdapter
-
-        // Configurer les listeners pour la recherche
+        initViews(view)
+        setupRecyclerView()
         setupSearchListeners()
+        updateUIForMode()
 
         return view
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        searchTimer?.cancel()
+        searchTimer = null
+    }
+
+    // ==================== INITIALISATION ====================
+
+    private fun initViews(view: View) {
+        searchEditText = view.findViewById(R.id.search_edit_text)
+        resultsInfoText = view.findViewById(R.id.results_info_text)
+        searchResultsRecyclerView = view.findViewById(R.id.search_results_recycler_view)
+        searchProgress = view.findViewById(R.id.search_progress)
+    }
+
+    private fun setupRecyclerView() {
+        searchResultsRecyclerView.layoutManager = LinearLayoutManager(context)
+        userSearchAdapter = UserSearchAdapter(requireContext(), onUserClickListener = this)
+        searchResultsRecyclerView.adapter = userSearchAdapter
+    }
+
     private fun setupSearchListeners() {
-        // Recherche lorsque l'utilisateur appuie sur "recherche" sur le clavier
+        // Recherche à l'appui sur "recherche"
         searchEditText.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 val searchText = searchEditText.text.toString().trim()
@@ -90,27 +117,26 @@ class UserSearchFragment : Fragment(), UserSearchAdapter.OnUserClickListener {
             false
         }
 
-        // Recherche au fur et à mesure que l'utilisateur tape (avec délai)
+        // Recherche avec délai pendant la frappe
         searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // Annuler le timer précédent s'il existe
                 searchTimer?.cancel()
 
                 val searchText = s.toString().trim()
                 if (searchText.isEmpty()) {
-                    resultsInfoText.text = "Entrez un terme de recherche ci-dessus"
-                    userSearchAdapter.updateUsers(emptyList())
+                    updateEmptyState()
                     return
                 }
 
-                // Initialiser un nouveau timer pour retarder la recherche
                 searchTimer = Timer()
                 searchTimer?.schedule(object : TimerTask() {
                     override fun run() {
                         activity?.runOnUiThread {
-                            performSearch(searchText)
+                            if (isAdded) {
+                                performSearch(searchText)
+                            }
                         }
                     }
                 }, SEARCH_DELAY_MS)
@@ -120,6 +146,48 @@ class UserSearchFragment : Fragment(), UserSearchAdapter.OnUserClickListener {
         })
     }
 
+    private fun updateUIForMode() {
+        if (isInvitationMode) {
+            resultsInfoText.text = "Recherchez un utilisateur à inviter dans la conversation"
+        } else {
+            resultsInfoText.text = "Entrez un terme de recherche ci-dessus"
+        }
+    }
+
+    private fun updateEmptyState() {
+        if (isInvitationMode) {
+            resultsInfoText.text = "Recherchez un utilisateur à inviter dans la conversation"
+        } else {
+            resultsInfoText.text = "Entrez un terme de recherche ci-dessus"
+        }
+        userSearchAdapter.updateUsers(emptyList())
+    }
+
+    // ==================== MÉTHODES PUBLIQUES ====================
+
+    // ✅ Pour exclure des utilisateurs (utilisateurs déjà dans la conversation)
+    fun setExcludedUsers(userIds: Set<String>) {
+        excludedUserIds = userIds
+        isInvitationMode = true
+        updateUIForMode()
+    }
+
+    // ✅ Pour définir le callback de sélection (objet complet)
+    fun setOnUserSelectedListener(listener: (UserSearchData) -> Unit) {
+        userSelectedCallback = listener
+        isInvitationMode = true
+        updateUIForMode()
+    }
+
+    // ✅ Pour définir le callback de sélection (ID seulement)
+    fun setOnUserSelectedByIdListener(listener: (String) -> Unit) {
+        userSelectedByIdCallback = listener
+        isInvitationMode = true
+        updateUIForMode()
+    }
+
+    // ==================== RECHERCHE ====================
+
     private fun performSearch(query: String) {
         val trimmedQuery = query.trim()
         if (trimmedQuery.length < 2) {
@@ -128,145 +196,201 @@ class UserSearchFragment : Fragment(), UserSearchAdapter.OnUserClickListener {
             return
         }
 
-        // Récupérer le token d'authentification
-        val token = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            Context.MODE_PRIVATE
-        ).getString("auth_token", "")
-
+        val token = getAuthToken()
         if (token.isNullOrEmpty()) {
-            Toast.makeText(
-                context,
-                "Session expirée, veuillez vous reconnecter",
-                Toast.LENGTH_SHORT
-            ).show()
-            (activity as? HomeActivity)?.redirectToLogin("Session expirée, veuillez vous reconnecter")
+            handleAuthError()
             return
         }
 
-        // Afficher l'indicateur de chargement
-        searchProgress.visibility = View.VISIBLE
-        resultsInfoText.text = "Recherche en cours..."
+        showLoading()
 
-        // Ajouter des logs pour déboguer
-        Log.d(TAG, "Début de la recherche avec le terme: '$trimmedQuery'")
+        Log.d(TAG, "Recherche: '$trimmedQuery' (Mode invitation: $isInvitationMode)")
 
-        // Appeler l'API pour la recherche
         ApiClient.searchUsers(token, trimmedQuery)
             .enqueue(object : Callback<UserSearchResponse> {
                 override fun onResponse(
                     call: Call<UserSearchResponse>,
                     response: Response<UserSearchResponse>
                 ) {
-                    if (!isAdded) return  // Vérifier si le fragment est toujours attaché
+                    if (!isAdded) return
 
-                    searchProgress.visibility = View.GONE
-
-                    try {
-                        // Log pour le débogage
-                        Log.d(TAG, "Code de réponse: ${response.code()}")
-                        Log.d(TAG, "URL de la requête: ${call.request().url}")
-
-                        if (response.isSuccessful) {
-                            // Log pour déboguer la structure de la réponse
-                            Log.d(TAG, "Réponse brute: ${response.body()}")
-
-                            val wrapper = response.body()?.data
-                            val userList = wrapper?.users
-
-                            if (userList != null && userList.isNotEmpty()) {
-                                userSearchAdapter.updateUsers(userList)
-                                resultsInfoText.text = "${userList.size} utilisateur(s) trouvé(s)"
-                            } else {
-                                userSearchAdapter.updateUsers(emptyList())
-                                resultsInfoText.text = "Aucun utilisateur trouvé pour '$trimmedQuery'"
-                            }
-                        } else {
-                            // Log du corps de l'erreur pour déboguer
-                            val errorBody = response.errorBody()?.string()
-                            Log.e(TAG, "Erreur API: ${response.code()}, message: $errorBody")
-
-                            if (response.code() == 401) {
-                                // Gérer l'erreur d'authentification
-                                Toast.makeText(
-                                    context,
-                                    "Session expirée, veuillez vous reconnecter",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                (activity as? HomeActivity)?.redirectToLogin("Session expirée, veuillez vous reconnecter")
-                            } else {
-                                resultsInfoText.text = "Erreur lors de la recherche: ${response.code()}"
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Exception lors du traitement de la réponse", e)
-                        resultsInfoText.text = "Erreur lors du traitement des résultats: ${e.message}"
-                    }
+                    hideLoading()
+                    handleSearchResponse(response, trimmedQuery)
                 }
 
                 override fun onFailure(call: Call<UserSearchResponse>, t: Throwable) {
                     if (!isAdded) return
 
-                    searchProgress.visibility = View.GONE
-                    Log.e(TAG, "Échec de l'appel API", t)
-
-                    val errorMessage = when (t) {
-                        is java.net.UnknownHostException -> "Erreur de connexion: Vérifiez votre connexion Internet"
-                        is java.net.SocketTimeoutException -> "Délai d'attente dépassé pour la connexion"
-                        is java.lang.IllegalStateException -> "Erreur de format de données: ${t.message}"
-                        else -> "Erreur réseau: ${t.message}"
-                    }
-
-                    resultsInfoText.text = errorMessage
+                    hideLoading()
+                    handleSearchError(t)
                 }
             })
     }
 
-    // Reste du code (onUserClick, openPrivateChat, etc.)
-    override fun onUserClick(user: UserSearchData) {
-        // Si nous sommes en mode sélection (pour ajouter un utilisateur à un workspace)
-        if (selectionMode && userSelectedCallback != null) {
-            userSelectedCallback?.invoke(user.id)
-            // Retourner à l'écran précédent après la sélection
-            activity?.supportFragmentManager?.popBackStack()
-            return
+
+    private fun handleSearchResponse(response: Response<UserSearchResponse>, query: String) {
+        try {
+            Log.d(TAG, "Code de réponse: ${response.code()}")
+
+            if (response.isSuccessful) {
+                // ✅ CORRECTION: Accéder à response.body()?.data?.users pour obtenir la liste
+                val userList: List<UserSearchData> = response.body()?.data?.users ?: emptyList()
+                Log.d(TAG, "Utilisateurs trouvés: ${userList.size}")
+
+                // ✅ CORRECTION: Vérifier isNotEmpty() sur la liste typée
+                if (userList.isNotEmpty()) {
+                    val filteredUsers = filterUsers(userList)
+                    updateResults(filteredUsers, userList.size, query)
+                } else {
+                    showNoResults(query)
+                }
+            } else {
+                handleApiError(response)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception lors du traitement de la réponse", e)
+            resultsInfoText.text = "Erreur lors du traitement des résultats"
+        }
+    }
+
+    private fun filterUsers(userList: List<UserSearchData>): List<UserSearchData> {
+        return if (excludedUserIds.isEmpty()) {
+            userList
+        } else {
+            userList.filter { user -> !excludedUserIds.contains(user.id) }
+        }
+    }
+
+    private fun updateResults(filteredUsers: List<UserSearchData>, totalFound: Int, query: String) {
+        userSearchAdapter.updateUsers(filteredUsers)
+
+        val message = when {
+            filteredUsers.isEmpty() && excludedUserIds.isNotEmpty() -> {
+                "Tous les utilisateurs trouvés sont déjà dans la conversation"
+            }
+            filteredUsers.size < totalFound -> {
+                val excludedCount = totalFound - filteredUsers.size
+                "${filteredUsers.size} utilisateur(s) disponible(s) ($excludedCount déjà présent(s))"
+            }
+            else -> {
+                "${filteredUsers.size} utilisateur(s) trouvé(s)"
+            }
         }
 
-        // Sinon, comportement normal existant (afficher les options)
+        resultsInfoText.text = message
+        Log.d(TAG, "Résultats filtrés: ${filteredUsers.size}/$totalFound")
+    }
+
+    private fun showNoResults(query: String) {
+        userSearchAdapter.updateUsers(emptyList())
+        resultsInfoText.text = "Aucun utilisateur trouvé pour '$query'"
+    }
+
+    private fun handleApiError(response: Response<UserSearchResponse>) {
+        val errorBody = response.errorBody()?.string()
+        Log.e(TAG, "Erreur API: ${response.code()}, message: $errorBody")
+
+        when (response.code()) {
+            401 -> handleAuthError()
+            else -> resultsInfoText.text = "Erreur lors de la recherche: ${response.code()}"
+        }
+    }
+
+    private fun handleSearchError(t: Throwable) {
+        Log.e(TAG, "Échec de l'appel API", t)
+
+        val errorMessage = when (t) {
+            is java.net.UnknownHostException -> "Erreur de connexion: Vérifiez votre connexion Internet"
+            is java.net.SocketTimeoutException -> "Délai d'attente dépassé"
+            else -> "Erreur réseau: ${t.message}"
+        }
+
+        resultsInfoText.text = errorMessage
+    }
+
+    private fun showLoading() {
+        searchProgress.visibility = View.VISIBLE
+        resultsInfoText.text = "Recherche en cours..."
+    }
+
+    private fun hideLoading() {
+        searchProgress.visibility = View.GONE
+    }
+
+    private fun handleAuthError() {
+        Toast.makeText(
+            context,
+            "Session expirée, veuillez vous reconnecter",
+            Toast.LENGTH_SHORT
+        ).show()
+        (activity as? HomeActivity)?.redirectToLogin("Session expirée")
+    }
+
+    // ==================== INTERACTIONS UTILISATEUR ====================
+
+    override fun onUserClick(user: UserSearchData) {
+        Log.d(TAG, "Clic sur utilisateur: ${user.username}")
+
+        if (isInvitationMode) {
+            handleUserSelection(user)
+        } else {
+            showUserOptions(user)
+        }
+    }
+
+    override fun onActionButtonClick(user: UserSearchData) {
+        Log.d(TAG, "Clic sur bouton d'action: ${user.username}")
+
+        if (isInvitationMode) {
+            handleUserSelection(user)
+        } else {
+            openPrivateChat(user)
+        }
+    }
+
+    private fun handleUserSelection(user: UserSearchData) {
+        // Appeler le callback approprié
+        userSelectedCallback?.invoke(user)
+        userSelectedByIdCallback?.invoke(user.id)
+
+        // Afficher un feedback
+        Toast.makeText(context, "${user.username} sélectionné", Toast.LENGTH_SHORT).show()
+
+        // Retourner à l'écran précédent
+        activity?.supportFragmentManager?.popBackStack()
+    }
+
+    private fun showUserOptions(user: UserSearchData) {
         val options = arrayOf("Voir le profil", "Envoyer un message")
 
         android.app.AlertDialog.Builder(requireContext())
             .setTitle("Options pour ${user.username}")
             .setItems(options) { dialog, which ->
                 when (which) {
-                    0 -> {
-                        // Option pour voir le profil
-                        Toast.makeText(context, "Voir le profil de ${user.username} (à implémenter)", Toast.LENGTH_SHORT).show()
-                    }
-                    1 -> {
-                        // Option pour envoyer un message privé
-                        openPrivateChat(user)
-                    }
+                    0 -> showUserProfile(user)
+                    1 -> openPrivateChat(user)
                 }
             }
             .show()
     }
 
+    private fun showUserProfile(user: UserSearchData) {
+        Toast.makeText(
+            context,
+            "Voir le profil de ${user.username} (à implémenter)",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     private fun openPrivateChat(user: UserSearchData) {
-        // Récupérer l'ID de l'utilisateur actuel
-        val myUserId = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            Context.MODE_PRIVATE
-        ).getString("user_id", "")
-
+        val myUserId = getCurrentUserId()
         if (myUserId.isNullOrEmpty()) {
             Toast.makeText(context, "Erreur: ID utilisateur non trouvé", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // CORRECTION: Utiliser PrivateConversationFragment.newInstance
         val privateChatFragment = PrivateConversationFragment.newInstance(
-            conversationId = "", // Valeur par défaut pour une nouvelle conversation
+            conversationId = "", // Nouvelle conversation
             otherUserId = user.id,
             username = user.username,
             myUserId = myUserId,
@@ -278,48 +402,22 @@ class UserSearchFragment : Fragment(), UserSearchAdapter.OnUserClickListener {
             .addToBackStack(null)
             .commit()
 
-        Log.d(TAG, "Conversation privée ouverte avec l'utilisateur: ${user.username}")
+        Log.d(TAG, "Conversation privée ouverte avec: ${user.username}")
     }
 
-    override fun onActionButtonClick(user: UserSearchData) {
-        // Si nous sommes en mode sélection, utiliser le callback
-        if (selectionMode && userSelectedCallback != null) {
-            userSelectedCallback?.invoke(user.id)
-            // Retourner à l'écran précédent après la sélection
-            activity?.supportFragmentManager?.popBackStack()
-            return
-        }
+    // ==================== UTILITAIRES ====================
 
-        // Sinon, comportement normal existant (ouvrir directement le chat)
-        val myUserId = requireActivity().getSharedPreferences(
+    private fun getAuthToken(): String? {
+        return requireActivity().getSharedPreferences(
+            "SupChatPrefs",
+            Context.MODE_PRIVATE
+        ).getString("auth_token", "")
+    }
+
+    private fun getCurrentUserId(): String? {
+        return requireActivity().getSharedPreferences(
             "SupChatPrefs",
             Context.MODE_PRIVATE
         ).getString("user_id", "")
-
-        if (myUserId.isNullOrEmpty()) {
-            Toast.makeText(context, "Erreur: ID utilisateur non trouvé", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // CORRECTION: Utiliser PrivateConversationFragment.newInstance
-        val privateChatFragment = PrivateConversationFragment.newInstance(
-            conversationId = "", // Valeur par défaut pour une nouvelle conversation
-            otherUserId = user.id,
-            username = user.username,
-            myUserId = myUserId,
-            profilePicture = user.profilePicture
-        )
-
-        requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.main_content_container, privateChatFragment)
-            .addToBackStack(null)
-            .commit()
-
-        Log.d(TAG, "Conversation privée ouverte avec l'utilisateur: ${user.username}")
-    }
-
-    fun setOnUserSelectedListener(listener: (String) -> Unit) {
-        userSelectedCallback = listener
-        selectionMode = true
     }
 }

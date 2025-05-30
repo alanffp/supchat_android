@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorOnSurface">
+    
+    <!-- Icône représentant plusieurs personnes/participants -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,12.75c1.63,0 3.07,0.39 4.24,0.9c1.08,0.48 1.76,1.56 1.76,2.73L18,18H6l0,-1.61c0,-1.18 0.68,-2.26 1.76,-2.73C8.93,13.14 10.37,12.75 12,12.75z"/>
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,12c1.93,0 3.5,-1.57 3.5,-3.5S13.93,5 12,5S8.5,6.57 8.5,8.5S10.07,12 12,12z"/>
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M7.5,12c1.04,0 1.88,-0.84 1.88,-1.88S8.54,8.25 7.5,8.25s-1.88,0.84 -1.88,1.88S6.46,12 7.5,12z"/>
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M16.5,12c1.04,0 1.88,-0.84 1.88,-1.88s-0.84,-1.88 -1.88,-1.88s-1.88,0.84 -1.88,1.88S15.46,12 16.5,12z"/>
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M7.5,12.75c0.95,0 1.83,0.23 2.5,0.55C9.59,13.5 9.25,13.75 9,14.09L6,14.09c0,-0.69 0.4,-1.31 1.05,-1.6C7.23,12.83 7.36,12.75 7.5,12.75z"/>
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M16.5,12.75c0.14,0 0.27,0.08 0.45,0.24C17.6,13.28 18,13.9 18,14.59l-3,0c-0.25,-0.34 -0.59,-0.59 -1,-0.79C14.67,12.98 15.55,12.75 16.5,12.75z"/>
+</vector>

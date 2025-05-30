@@ -192,12 +192,13 @@ class WorkspaceMembersFragment : Fragment() {
         }
     }
 
+    // ✅ CORRECTION de la méthode openUserSearch (ligne 201)
     private fun openUserSearch() {
         // Créer et configurer le fragment de recherche d'utilisateurs
         val searchFragment = UserSearchFragment.newInstance()
 
-        // Configurer le mode de sélection d'utilisateur
-        searchFragment.setOnUserSelectedListener { userId ->
+        // ✅ CORRECTION: Utiliser setOnUserSelectedByIdListener au lieu de setOnUserSelectedListener
+        searchFragment.setOnUserSelectedByIdListener { userId ->
             addMemberToWorkspace(userId)
         }
 
