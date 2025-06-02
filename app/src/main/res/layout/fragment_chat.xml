@@ -3,36 +3,61 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimary">
+    android:background="#1a1a1a">
 
-    <!-- Barre supérieure avec le nom du canal et bouton retour -->
+    <!-- Barre supérieure avec gradient moderne -->
     <LinearLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/colorPrimaryDark"
+        android:background="@drawable/top_bar_gradient"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="8dp">
+        android:padding="12dp"
+        android:elevation="8dp">
 
         <ImageButton
             android:id="@+id/back_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Retour" />
+            android:background="@drawable/circle_button_transparent"
+            android:contentDescription="Retour"
+            android:tint="#ffffff"
+            android:layout_marginEnd="8dp" />
 
-        <TextView
-            android:id="@+id/channel_name"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="@android:color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp" />
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/channel_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#ffffff"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:text="# général"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="En ligne"
+                android:textColor="#b3ffffff"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:background="@drawable/circle_button_transparent"
+            android:contentDescription="Plus d'options"
+            android:tint="#ffffff" />
     </LinearLayout>
 
     <!-- Indicateur de chargement -->
@@ -41,7 +66,8 @@
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_centerInParent="true"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:indeterminateTint="#ff6b35" />
 
     <!-- Zone de messages avec RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
@@ -50,83 +76,143 @@
         android:layout_height="match_parent"
         android:layout_below="@id/top_bar"
         android:layout_above="@+id/reply_info_bar"
-        android:padding="8dp"
-        android:clipToPadding="false" />
+        android:paddingHorizontal="8dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="true"
+        android:scrollbarStyle="outsideOverlay" />
 
-    <!-- Barre d'information de réponse -->
+    <!-- Barre d'information de réponse avec style moderne -->
     <LinearLayout
         android:id="@+id/reply_info_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/message_input_container"
         android:orientation="horizontal"
-        android:padding="8dp"
-        android:background="#333333"
-        android:visibility="gone">
+        android:padding="16dp"
+        android:background="@drawable/reply_bar_background"
+        android:visibility="gone"
+        android:gravity="center_vertical"
+        android:elevation="2dp">
+
+        <View
+            android:layout_width="4dp"
+            android:layout_height="32dp"
+            android:background="@drawable/reply_indicator"
+            android:layout_marginEnd="12dp" />
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:src="@android:drawable/ic_menu_revert"
             android:layout_gravity="center_vertical"
-            android:tint="#AAAAAA" />
+            android:tint="#ff6b35"
+            android:layout_marginEnd="8dp" />
 
-        <TextView
-            android:id="@+id/reply_info_text"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Réponse à @utilisateur"
-            android:textColor="#DDDDDD"
-            android:layout_marginStart="8dp"
-            android:layout_gravity="center_vertical" />
+            android:orientation="vertical">
+
+            <TextView
+                android:text="Réponse à"
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/reply_info_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@utilisateur"
+                android:textColor="#ffffff"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/cancel_reply_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/circle_button_transparent"
             android:contentDescription="Annuler la réponse"
-            android:tint="#DDDDDD" />
+            android:tint="#888888" />
     </LinearLayout>
 
-    <!-- Zone de saisie de message -->
+    <!-- Zone de saisie de message moderne -->
     <LinearLayout
         android:id="@+id/message_input_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_alignParentBottom="true"
-        android:padding="8dp"
-        android:background="@color/colorPrimaryDark">
+        android:padding="16dp"
+        android:background="@drawable/input_container_background"
+        android:elevation="4dp"
+        android:gravity="bottom">
+
+        <!-- Bouton d'attachement -->
+        <ImageButton
+            android:id="@+id/attach_button"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:src="@android:drawable/ic_menu_add"
+            android:background="@drawable/circle_button_accent"
+            android:contentDescription="Joindre un fichier"
+            android:tint="#ffffff"
+            android:layout_marginEnd="8dp"
+            android:layout_gravity="bottom" />
         
-        <EditText
-            android:id="@+id/message_input"
+        <!-- Zone de saisie avec style moderne -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Écrivez un message..."
-            android:textColorHint="#78FFFFFF"
-            android:textColor="@android:color/black"
-            android:padding="12dp"
-            android:background="@drawable/message_input_background"
-            android:imeOptions="actionSend"
-            android:inputType="textMultiLine"
-            android:maxLines="4" />
-        
+            android:orientation="vertical"
+            android:background="@drawable/modern_message_input_background"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
+            android:layout_marginEnd="8dp"
+            android:minHeight="44dp"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/message_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Tapez votre message..."
+                android:textColorHint="#666666"
+                android:textColor="#ffffff"
+                android:textSize="16sp"
+                android:background="@android:color/transparent"
+                android:imeOptions="actionSend"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="4"
+                android:minLines="1"
+                android:padding="0dp"
+                android:fontFamily="sans-serif" />
+        </LinearLayout>
+
+        <!-- Bouton d'envoi avec animation -->
         <ImageButton
             android:id="@+id/send_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:src="@android:drawable/ic_menu_send"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/send_button_background"
             android:contentDescription="Envoyer"
-            android:layout_marginStart="8dp"
-            android:tint="@color/colorAccent" />
+            android:tint="#ffffff"
+            android:layout_gravity="bottom"
+            android:elevation="2dp" />
     </LinearLayout>
 
-    <!-- Conteneur pour les messages legacy (à supprimer si vous n'utilisez que RecyclerView) -->
+    <!-- Conteneur pour les messages legacy (masqué) -->
     <LinearLayout
         android:id="@+id/messages_container"
         android:layout_width="match_parent"

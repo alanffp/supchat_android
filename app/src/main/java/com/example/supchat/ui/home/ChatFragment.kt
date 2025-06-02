@@ -608,13 +608,9 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
             .show()
     }
 
-    /**
-     * Appelé quand l'utilisateur veut ajouter une réaction à un message
-     */
     override fun onReactToMessage(message: Message, emoji: String) {
-        Log.d(TAG, "Réagir au message ${message.id} avec l'emoji: $emoji")
+        Log.d("ChatFragment", "🎭 Réaction demandée: $emoji sur message ${message.id}")
 
-        // Obtenir le token
         val token = requireActivity().getSharedPreferences(
             "SupChatPrefs",
             Context.MODE_PRIVATE
@@ -625,47 +621,55 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
             return
         }
 
-        // Vérifier les IDs
         if (workspaceId.isNullOrEmpty() || canalId.isEmpty()) {
             Toast.makeText(context, "Erreur: Informations manquantes", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Appeler l'API
-        progressBar.visibility = View.VISIBLE
+        // ✅ CORRECTION: Ne pas afficher la barre de progression pour les réactions
+        // progressBar.visibility = View.VISIBLE  // ← ENLEVER CETTE LIGNE
 
         ApiClient.addReaction(token, workspaceId!!, canalId, message.id, emoji)
             .enqueue(object : Callback<MessagesResponse> {
-                override fun onResponse(
-                    call: Call<MessagesResponse>,
-                    response: Response<MessagesResponse>
-                ) {
-                    progressBar.visibility = View.GONE
+                override fun onResponse(call: Call<MessagesResponse>, response: Response<MessagesResponse>) {
+                    // ✅ CORRECTION: Ne pas masquer la barre de progression ici
+                    // progressBar.visibility = View.GONE  // ← ENLEVER CETTE LIGNE
 
                     if (response.isSuccessful) {
-                        // Rafraîchir les messages
-                        chargerMessages()
+                        Log.d("ChatFragment", "✅ Réaction ajoutée avec succès")
+                        response.body()?.let { messagesResponse ->
+                            Log.d("ChatFragment", "📦 Messages reçus: ${messagesResponse.data.messages.size}")
+
+                            // ✅ CORRECTION: Mettre à jour directement sans recharger
+                            requireActivity().runOnUiThread {
+                                // Juste mettre à jour l'adaptateur avec les nouvelles données
+                                messageAdapter.updateMessages(messagesResponse.data.messages)
+
+                                // ✅ CORRECTION: Ne pas défiler, rester à la position actuelle
+                                // scrollToBottom()  // ← ENLEVER CETTE LIGNE
+
+                                Log.d("ChatFragment", "🔄 Adaptateur mis à jour - réaction ajoutée")
+                            }
+                        }
                     } else {
-                        handleApiError(response)
+                        Log.e("ChatFragment", "❌ Erreur réaction: ${response.code()} - ${response.message()}")
+
+                        requireActivity().runOnUiThread {
+                            Toast.makeText(context, "Erreur lors de l'ajout de la réaction", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
 
                 override fun onFailure(call: Call<MessagesResponse>, t: Throwable) {
-                    progressBar.visibility = View.GONE
-                    Log.e(TAG, "Échec de l'ajout de réaction", t)
+                    Log.e("ChatFragment", "❌ Échec réaction", t)
 
-                    Toast.makeText(
-                        context,
-                        "Erreur: ${t.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(context, "Erreur réseau: ${t.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             })
     }
 
-    /**
-     * Appelé quand l'utilisateur veut répondre à un message
-     */
     override fun onReplyToMessage(message: Message) {
         Log.d(TAG, "Répondre au message: ${message.id}")
 

@@ -1,193 +1,572 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#1a1a1a">
 
-    <!-- MAIN CONTENT -->
+    <!-- CONTENU PRINCIPAL -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Top Bar -->
-        <RelativeLayout
+        <!-- Barre supérieure moderne -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:background="#202225"
-            android:padding="10dp">
+            android:layout_height="64dp"
+            android:background="#ff6b35"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp"
+            android:elevation="8dp">
             
-            <TextView
+            <!-- Logo et titre -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:background="#ffffff"
+                    android:padding="6dp"
+                    android:layout_marginEnd="12dp" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SupChat"
+                    android:textColor="#ffffff"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+            
+            <!-- Boutons d'action -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="SupChat"
-                android:textColor="#FFFFFF"
-                android:textSize="20sp"
-                android:layout_centerVertical="true" />
-            
-            <ImageButton
-                android:id="@+id/menu_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_menu"
-                android:contentDescription="@string/menu_button_description"
-                android:layout_centerVertical="true"
-                android:minHeight="48dp"
-                android:minWidth="48dp" />
-        </RelativeLayout>
+                android:orientation="horizontal">
+                
+                <!-- Bouton recherche globale -->
+                <ImageButton
+                    android:id="@+id/search_button"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Rechercher"
+                    android:tint="#ffffff"
+                    android:layout_marginEnd="8dp" />
+                
+                <!-- Bouton notifications -->
+                <ImageButton
+                    android:id="@+id/notifications_button"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@android:drawable/ic_popup_reminder"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Notifications"
+                    android:tint="#ffffff"
+                    android:layout_marginEnd="8dp" />
+                
+                <!-- Bouton menu -->
+                <ImageButton
+                    android:id="@+id/menu_button"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@android:drawable/ic_menu_sort_by_size"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Menu"
+                    android:tint="#ffffff" />
+            </LinearLayout>
+        </LinearLayout>
 
-        <!-- Content Area (Servers and Main Content) -->
+        <!-- Zone de contenu avec workspaces -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <!-- Servers (Left) -->
+            <!-- Barre des workspaces (gauche) -->
             <LinearLayout
-                android:id="@+id/server_list"
-                android:layout_width="60dp"
+                android:layout_width="72dp"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:background="#202225">
+                android:background="#202225"
+                android:padding="8dp"
+                android:elevation="4dp">
 
-                <ImageButton
-                    android:id="@+id/server_button"
+                <!-- Bouton Home -->
+                <LinearLayout
+                    android:id="@+id/home_workspace_button"
                     android:layout_width="match_parent"
-                    android:layout_height="60dp"
-                    android:src="@drawable/ic_server_example"
-                    android:background="@drawable/rounded_button"
-                    android:layout_margin="8dp"
-                    android:contentDescription="@string/server_list_description"
-                    android:minHeight="48dp"
-                    android:minWidth="48dp" />
+                    android:layout_height="56dp"
+                    android:background="#ff6b35"
+                    android:gravity="center"
+                    android:layout_marginBottom="8dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:tint="#ffffff" />
+                </LinearLayout>
+
+                <!-- Séparateur -->
+                <View
+                    android:layout_width="32dp"
+                    android:layout_height="2dp"
+                    android:background="#404040"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Zone scrollable pour workspaces + bouton créer -->
+                <ScrollView
+                    android:id="@+id/workspaces_scroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:scrollbars="none">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        
+                        <!-- Container des workspaces existants -->
+                        <LinearLayout
+                            android:id="@+id/server_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            
+                            <!-- Les workspaces seront ajoutés dynamiquement ici -->
+                            
+                        </LinearLayout>
+                        
+                        <!-- Bouton créer un nouveau workspace (dans la liste scrollable) -->
+                        <LinearLayout
+                            android:id="@+id/create_workspace_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:background="#36393f"
+                            android:gravity="center"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp"
+                            android:clickable="true"
+                            android:focusable="true">
+                            
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_menu_add"
+                                android:tint="#43b581" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </ScrollView>
+
+                <!-- Bouton ajouter workspace (menu général - en bas fixe) -->
+                <LinearLayout
+                    android:id="@+id/add_workspace_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:background="#36393f"
+                    android:gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_more"
+                        android:tint="#ffffff" />
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Main Content Container -->
+            <!-- Conteneur principal des fragments -->
             <FrameLayout
                 android:id="@+id/main_content_container"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:background="#36393f" />
+        </LinearLayout>
+
+        <!-- Barre de statut utilisateur (bas) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#292b2f"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
+            
+            <!-- Avatar utilisateur -->
+            <ImageView
+                android:id="@+id/user_avatar"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:background="#7289da"
+                android:layout_marginEnd="8dp" />
+            
+            <!-- Info utilisateur -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                
+                <TextView
+                    android:id="@+id/username_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nom d'utilisateur"
+                    android:textColor="#ffffff"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+                
+                <TextView
+                    android:id="@+id/status_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="En ligne"
+                    android:textColor="#43b581"
+                    android:textSize="12sp" />
+            </LinearLayout>
+            
+            <!-- Boutons de statut -->
+            <ImageButton
+                android:id="@+id/settings_button"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_preferences"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Paramètres"
+                android:tint="#b9bbbe"
+                android:layout_marginStart="8dp" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- RIGHT DRAWER -->
+    <!-- DRAWER DE DROITE (Menu) -->
     <LinearLayout
         android:id="@+id/right_drawer"
-        android:layout_width="280dp"
+        android:layout_width="320dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
         android:orientation="vertical"
-        android:background="#2F3136"
-        android:padding="16dp">
+        android:background="#2f3136"
+        android:elevation="16dp">
 
-        <TextView
-            android:id="@+id/profile_text"
+        <!-- En-tête du drawer -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="👤 Profil"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="@string/profile_option_description" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="⚙️ Paramètres"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:contentDescription="@string/settings_option_description" />
-
-        <TextView
-            android:id="@+id/logout_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🚪 Déconnexion"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="@string/logout_option_description" />
-        
-        <!-- Ajoutez cette nouvelle option de recherche ici -->
-        <TextView
-            android:id="@+id/search_users_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🔍 Rechercher des utilisateurs"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="Rechercher des utilisateurs" />
-        
-        <!-- Messages privés -->
-        <TextView
-            android:id="@+id/private_messages_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="💬 Messages privés"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="Accéder aux messages privés" />
-        
-        <!-- Créer une conversation -->
-        <TextView
-            android:id="@+id/create_conversation_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="➕ Créer une conversation"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="Créer une nouvelle conversation" />
+            android:layout_height="64dp"
+            android:background="#ff6b35"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="16dp">
             
-        <!-- Gestion des workspaces -->
-        <TextView
-            android:id="@+id/manage_workspaces_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🔧 Gérer les workspaces"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="Gérer les workspaces" />
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:background="#ffffff"
+                android:layout_marginEnd="12dp" />
             
-        <!-- Recherche de workspaces publics - REPOSITIONNÉ ICI -->
-        <TextView
-            android:id="@+id/search_public_workspaces_text"
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mon Profil"
+                    android:textColor="#ffffff"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gérer votre compte"
+                    android:textColor="#b3ffffff"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Contenu du drawer -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="none">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <!-- Section Profil -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="PROFIL"
+                    android:textColor="#72767d"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:padding="12dp"
+                    android:paddingBottom="8dp" />
+
+                <LinearLayout
+                    android:id="@+id/profile_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:tint="#b9bbbe"
+                        android:layout_marginEnd="12dp" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mon Profil"
+                        android:textColor="#dcddde"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <!-- Section Messages -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="MESSAGES"
+                    android:textColor="#72767d"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:padding="12dp"
+                    android:paddingBottom="8dp"
+                    android:layout_marginTop="16dp" />
+
+                <LinearLayout
+                    android:id="@+id/private_messages_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_dialog_email"
+                        android:tint="#b9bbbe"
+                        android:layout_marginEnd="12dp" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Messages privés"
+                        android:textColor="#dcddde"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/create_conversation_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_add"
+                        android:tint="#b9bbbe"
+                        android:layout_marginEnd="12dp" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nouvelle conversation"
+                        android:textColor="#dcddde"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <!-- Section Workspaces -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="WORKSPACES"
+                    android:textColor="#72767d"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:padding="12dp"
+                    android:paddingBottom="8dp"
+                    android:layout_marginTop="16dp" />
+
+                <LinearLayout
+                    android:id="@+id/manage_workspaces_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_manage"
+                        android:tint="#b9bbbe"
+                        android:layout_marginEnd="12dp" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Gérer les workspaces"
+                        android:textColor="#dcddde"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/search_public_workspaces_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_search"
+                        android:tint="#b9bbbe"
+                        android:layout_marginEnd="12dp" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Découvrir les workspaces"
+                        android:textColor="#dcddde"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <!-- Section Recherche -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="RECHERCHE"
+                    android:textColor="#72767d"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:padding="12dp"
+                    android:paddingBottom="8dp"
+                    android:layout_marginTop="16dp" />
+
+                <LinearLayout
+                    android:id="@+id/search_users_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginBottom="4dp"
+                    android:clickable="true"
+                    android:focusable="true">
+                    
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_search"
+                        android:tint="#b9bbbe"
+                        android:layout_marginEnd="12dp" />
+                    
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Rechercher des utilisateurs"
+                        android:textColor="#dcddde"
+                        android:textSize="16sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Footer du drawer -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🔎 Rechercher des workspaces"
-            android:textColor="#FFF"
-            android:textSize="18sp"
-            android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:contentDescription="Rechercher des workspaces publics" />
+            android:orientation="vertical"
+            android:background="#292b2f"
+            android:padding="16dp">
+            
+            <LinearLayout
+                android:id="@+id/logout_text"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:clickable="true"
+                android:focusable="true">
+                
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:tint="#f04747"
+                    android:layout_marginEnd="12dp" />
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Déconnexion"
+                    android:textColor="#f04747"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

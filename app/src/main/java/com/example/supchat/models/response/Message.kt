@@ -52,23 +52,46 @@ data class Message(
      * Obtenir les réactions sous forme de liste
      */
     fun getReactionsList(): List<Pair<String, Int>> {
-        return reactions?.map { Pair(it.key, it.value) } ?: emptyList()
+        val list = reactions?.map { Pair(it.key, it.value) } ?: emptyList()
+        android.util.Log.d("Message", "getReactionsList pour message $id: $list")
+        return list
     }
 
     /**
      * Vérifier si ce message a une réaction spécifique
      */
     fun hasReaction(emoji: String): Boolean {
-        return reactions?.containsKey(emoji) == true
+        val has = reactions?.containsKey(emoji) == true
+        android.util.Log.d("Message", "hasReaction $emoji pour message $id: $has")
+        return has
     }
-
     /**
      * Récupérer le nombre total de réactions
      */
     fun getTotalReactions(): Int {
-        return reactions?.values?.sum() ?: 0
+        val total = reactions?.values?.sum() ?: 0
+        android.util.Log.d("Message", "getTotalReactions pour message $id: $total")
+        return total
     }
 
+    fun addReaction(emoji: String): Message {
+        val newReactions = (reactions?.toMutableMap() ?: mutableMapOf()).apply {
+            this[emoji] = (this[emoji] ?: 0) + 1
+        }
+        return this.copy(reactions = newReactions)
+    }
+
+    fun getReactionsDebugString(): String {
+        return "Reactions pour message $id: $reactions"
+    }
+
+    fun hasReactions(): Boolean {
+        return reactions != null && reactions.isNotEmpty()
+    }
+
+    fun getDebugSummary(): String {
+        return "Message(id=$id, auteur=${getNomAuteur()}, hasReactions=${hasReactions()}, totalReactions=${getTotalReactions()})"
+    }
     /**
      * Vérifier si ce message est une réponse
      */

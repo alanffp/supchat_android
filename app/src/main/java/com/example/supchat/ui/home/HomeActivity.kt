@@ -34,18 +34,27 @@ import android.view.LayoutInflater
 import android.widget.Button
 import com.google.android.material.textfield.TextInputEditText
 
+
+
+
+
 class HomeActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var menuButton: ImageButton
     private lateinit var serverListContainer: LinearLayout
     private lateinit var mainContentContainer: FrameLayout
-    private lateinit var logoutButton: TextView
-    private lateinit var profileButton: TextView
+
+    // ✅ CORRECTION: Changer de TextView vers LinearLayout
+    private lateinit var logoutButton: LinearLayout
+    private lateinit var profileButton: LinearLayout
+
     private var currentWorkspaceName: String? = null
     private var workspaces: List<Workspace> = emptyList()
     private var currentWorkspaceId: String? = null
     private lateinit var themeToggleButton: TextView
-    private lateinit var searchUsersButton: TextView
+
+    // ✅ CORRECTION: Changer de TextView vers LinearLayout
+    private lateinit var searchUsersButton: LinearLayout
 
     // ✅ Propriétés WebSocket
     private lateinit var app: SupChatApplication
@@ -57,91 +66,134 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home)
 
-        // ✅ Initialiser WebSocket en premier
-        initializeWebSocket()
+        try {
+            setContentView(R.layout.activity_home)
 
-        // Initialisation des vues
-        drawerLayout = findViewById(R.id.drawer_layout)
-        menuButton = findViewById(R.id.menu_button)
-        serverListContainer = findViewById(R.id.server_list)
-        mainContentContainer = findViewById(R.id.main_content_container)
-        logoutButton = findViewById(R.id.logout_text)
-        profileButton = findViewById(R.id.profile_text)
-        searchUsersButton = findViewById(R.id.search_users_text)
-
-        // ✅ MODIFICATION: Configuration du bouton "Créer une conversation" avec dialogue
-        val createConversationText = findViewById<TextView>(R.id.create_conversation_text)
-        createConversationText.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-            showConversationTypeDialog() // ✅ Nouvelle méthode
-        }
-
-        // Initialiser le bouton de gestion des workspaces
-        val manageWorkspacesButton = findViewById<TextView>(R.id.manage_workspaces_text)
-        manageWorkspacesButton.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-            openWorkspaceManagement()
-        }
-
-        // Initialiser le bouton de recherche de workspaces publics
-        val searchPublicWorkspacesButton = findViewById<TextView>(R.id.search_public_workspaces_text)
-        searchPublicWorkspacesButton.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-            openPublicWorkspaceSearch()
-        }
-
-        val privateMessagesText = findViewById<TextView>(R.id.private_messages_text)
-        privateMessagesText.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-            val fragment = PrivateConversationsListFragment()
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.main_content_container, fragment)
-                .addToBackStack(null)
-                .commit()
-        }
-
-        // Configuration du bouton menu pour ouvrir/fermer le drawer
-        menuButton.setOnClickListener {
-            if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
-                drawerLayout.closeDrawer(GravityCompat.END)
-            } else {
-                drawerLayout.openDrawer(GravityCompat.END)
+            // ✅ Vérification du token AVANT l'initialisation WebSocket
+            val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
+            if (token.isNullOrEmpty()) {
+                Log.e(TAG, "Token d'authentification manquant")
+                redirectToLogin("Session expirée, veuillez vous reconnecter")
+                return
             }
+
+            // ✅ Initialiser WebSocket seulement si le token existe
+            initializeWebSocket()
+
+            // ✅ Initialisation sécurisée des vues
+            initializeViews()
+
+            // ✅ Configuration des listeners
+            setupListeners()
+
+            // Charger les workspaces depuis l'API
+            fetchWorkspaces()
+
+            // Afficher l'écran d'accueil en attendant
+            showWelcomeScreen()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur dans onCreate", e)
+            Toast.makeText(this, "Erreur d'initialisation: ${e.message}", Toast.LENGTH_LONG).show()
+            redirectToLogin("Erreur d'initialisation")
         }
-
-        // Configuration du bouton de déconnexion
-        logoutButton.setOnClickListener {
-            deconnexionUtilisateur()
-        }
-
-        // Configuration du bouton de profil
-        profileButton.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-            openProfile()
-        }
-
-        // Configuration du bouton de recherche d'utilisateurs
-        searchUsersButton.setOnClickListener {
-            drawerLayout.closeDrawer(GravityCompat.END)
-            openUserSearch()
-        }
-
-        // Vérifier si le token est présent
-        val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
-        if (token.isNullOrEmpty()) {
-            Log.e(TAG, "Token d'authentification manquant")
-            redirectToLogin("Session expirée, veuillez vous reconnecter")
-            return
-        }
-
-        // Charger les workspaces depuis l'API
-        fetchWorkspaces()
-
-        // Afficher l'écran d'accueil en attendant
-        showWelcomeScreen()
     }
+
+    private fun initializeViews() {
+        try {
+            drawerLayout = findViewById(R.id.drawer_layout)
+            menuButton = findViewById(R.id.menu_button)
+            serverListContainer = findViewById(R.id.server_list)
+            mainContentContainer = findViewById(R.id.main_content_container)
+
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            logoutButton = findViewById(R.id.logout_text)
+            profileButton = findViewById(R.id.profile_text)
+            searchUsersButton = findViewById(R.id.search_users_text)
+
+            Log.d(TAG, "Vues initialisées avec succès")
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de l'initialisation des vues", e)
+            throw e
+        }
+    }
+    private fun setupListeners() {
+        try {
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            // Configuration du bouton "Créer une conversation" avec dialogue
+            val createConversationText = findViewById<LinearLayout>(R.id.create_conversation_text)
+            createConversationText?.setOnClickListener {
+                drawerLayout.closeDrawer(GravityCompat.END)
+                showConversationTypeDialog()
+            }
+
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            // Initialiser le bouton de gestion des workspaces
+            val manageWorkspacesButton = findViewById<LinearLayout>(R.id.manage_workspaces_text)
+            manageWorkspacesButton?.setOnClickListener {
+                drawerLayout.closeDrawer(GravityCompat.END)
+                openWorkspaceManagement()
+            }
+
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            // Initialiser le bouton de recherche de workspaces publics
+            val searchPublicWorkspacesButton = findViewById<LinearLayout>(R.id.search_public_workspaces_text)
+            searchPublicWorkspacesButton?.setOnClickListener {
+                drawerLayout.closeDrawer(GravityCompat.END)
+                openPublicWorkspaceSearch()
+            }
+
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            val privateMessagesText = findViewById<LinearLayout>(R.id.private_messages_text)
+            privateMessagesText?.setOnClickListener {
+                drawerLayout.closeDrawer(GravityCompat.END)
+                val fragment = PrivateConversationsListFragment()
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.main_content_container, fragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+
+            // Configuration du bouton menu pour ouvrir/fermer le drawer
+            menuButton?.setOnClickListener {
+                if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
+                    drawerLayout.closeDrawer(GravityCompat.END)
+                } else {
+                    drawerLayout.openDrawer(GravityCompat.END)
+                }
+            }
+
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            // Configuration du bouton de déconnexion
+            val logoutButton = findViewById<LinearLayout>(R.id.logout_text)
+            logoutButton?.setOnClickListener {
+                deconnexionUtilisateur()
+            }
+
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            // Configuration du bouton de profil
+            val profileButton = findViewById<LinearLayout>(R.id.profile_text)
+            profileButton?.setOnClickListener {
+                drawerLayout.closeDrawer(GravityCompat.END)
+                openProfile()
+            }
+
+            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            // Configuration du bouton de recherche d'utilisateurs
+            val searchUsersButton = findViewById<LinearLayout>(R.id.search_users_text)
+            searchUsersButton?.setOnClickListener {
+                drawerLayout.closeDrawer(GravityCompat.END)
+                openUserSearch()
+            }
+
+            Log.d(TAG, "Listeners configurés avec succès")
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de la configuration des listeners", e)
+            throw e
+        }
+    }
+
     private fun showConversationTypeDialog() {
         // ✅ NOUVEAU: Dialogue direct pour saisir le nom de la conversation
         showConversationNameDialog()
@@ -203,12 +255,21 @@ class HomeActivity : AppCompatActivity() {
     // ✅ Méthode pour initialiser WebSocket
     private fun initializeWebSocket() {
         try {
-            app = application as SupChatApplication
+            app = application as? SupChatApplication ?: run {
+                Log.e(TAG, "Application n'est pas une instance de SupChatApplication")
+                return
+            }
+
+            val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
+            if (token.isNullOrEmpty()) {
+                Log.w(TAG, "Token manquant pour WebSocket")
+                return
+            }
+
             webSocketService = app.getWebSocketService()
 
             // Si WebSocket n'est pas connecté, l'initialiser
-            val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
-            if (!token.isNullOrEmpty() && (webSocketService == null || !app.isWebSocketConnected())) {
+            if (!app.isWebSocketConnected()) {
                 app.initializeWebSocket(token)
                 webSocketService = app.getWebSocketService()
             }
@@ -221,6 +282,7 @@ class HomeActivity : AppCompatActivity() {
             Log.d(TAG, "WebSocket initialisé: ${app.isWebSocketConnected()}")
         } catch (e: Exception) {
             Log.e(TAG, "Erreur initialisation WebSocket", e)
+            // Ne pas faire planter l'app si WebSocket échoue
         }
     }
 
@@ -537,22 +599,29 @@ class HomeActivity : AppCompatActivity() {
 
     // ✅ Méthode redirectToLogin modifiée
     fun redirectToLogin(message: String = "") {
-        if (message.isNotEmpty()) {
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        try {
+            if (message.isNotEmpty()) {
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            }
+
+            // Déconnecter WebSocket seulement s'il existe
+            if (::app.isInitialized) {
+                app.disconnectWebSocket()
+            }
+
+            getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply()
+
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur dans redirectToLogin", e)
+            finish() // Fermer l'activité même en cas d'erreur
         }
-
-        // ✅ Déconnecter WebSocket
-        app.disconnectWebSocket()
-
-        getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
-            .edit()
-            .clear()
-            .apply()
-
-        val intent = Intent(this, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
     }
 
     override fun onResume() {

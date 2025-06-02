@@ -1,118 +1,266 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="@drawable/login_background_gradient"
+    tools:context=".ui.auth.LoginActivity">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        tools:context=".ui.auth.LoginActivity">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Connexion"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:layout_marginBottom="32dp"/>
-
-        <EditText
-            android:id="@+id/emailEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Email"
-            android:inputType="textEmailAddress"
-            android:layout_marginBottom="16dp"/>
-
-        <EditText
-            android:id="@+id/passwordEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Mot de passe"
-            android:inputType="textPassword"
-            android:layout_marginBottom="16dp"/>
-
-        <Button
-            android:id="@+id/loginButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Se connecter"
-            android:layout_marginBottom="16dp"/>
-
-        <TextView
-            android:id="@+id/forgotPasswordText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Mot de passe oublié ?"
-            android:gravity="center"
-            android:textColor="@android:color/holo_blue_dark"
-            android:layout_marginBottom="16dp"/>
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:minHeight="600dp">
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1"
-                android:background="#CCCCCC"/>
-
-            <TextView
+            <!-- Logo et titre -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Ou continuer avec"
-                android:layout_marginHorizontal="16dp"
-                android:textColor="#666666"/>
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginBottom="48dp">
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1"
-                android:background="#CCCCCC"/>
+                <!-- Logo de l'app -->
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:background="@drawable/logo_background"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp"
+                    android:elevation="8dp" />
+
+                <!-- Titre principal -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SupChat"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-light"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Sous-titre -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Connectez-vous à votre espace"
+                    android:textSize="16sp"
+                    android:textColor="#b3ffffff"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <!-- Carte de connexion -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/login_card_background"
+                android:padding="32dp"
+                android:elevation="12dp"
+                android:layout_marginBottom="24dp">
+
+                <!-- Titre de la carte -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Connexion"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:gravity="center"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- Champ Email -->
+                <EditText
+                    android:id="@+id/emailEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Adresse email"
+                    android:inputType="textEmailAddress"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_dialog_email"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Champ Mot de passe -->
+                <EditText
+                    android:id="@+id/passwordEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Mot de passe"
+                    android:inputType="textPassword"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_lock_lock"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Bouton de connexion principal -->
+                <Button
+                    android:id="@+id/loginButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Se connecter"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:background="@drawable/primary_button_background"
+                    android:elevation="4dp"
+                    android:layout_marginBottom="16dp"
+                    android:fontFamily="sans-serif-medium" />
+
+                <!-- Mot de passe oublié -->
+                <TextView
+                    android:id="@+id/forgotPasswordText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Mot de passe oublié ?"
+                    android:gravity="center"
+                    android:textColor="#ff6b35"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:padding="12dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Séparateur -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="24dp">
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"
+                        android:background="#404040" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ou continuer avec"
+                        android:layout_marginHorizontal="16dp"
+                        android:textColor="#888888"
+                        android:textSize="12sp" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"
+                        android:background="#404040" />
+                </LinearLayout>
+
+                <!-- Boutons de connexion sociale -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <!-- Bouton Google -->
+                    <Button
+                        android:id="@+id/googleLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginBottom="12dp"
+                        android:text="Continuer avec Google"
+                        android:textColor="#333333"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:background="@drawable/google_button_background"
+                        android:drawableStart="@android:drawable/ic_dialog_email"
+                        android:drawablePadding="12dp"
+                        android:gravity="center_vertical|center_horizontal"
+                        android:elevation="2dp" />
+
+                    <!-- Bouton Facebook -->
+                    <Button
+                        android:id="@+id/facebookLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginBottom="12dp"
+                        android:text="Continuer avec Facebook"
+                        android:textColor="#ffffff"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:background="@drawable/facebook_button_background"
+                        android:drawableStart="@android:drawable/ic_dialog_info"
+                        android:drawablePadding="12dp"
+                        android:gravity="center_vertical|center_horizontal"
+                        android:elevation="2dp" />
+
+                    <!-- Bouton Microsoft -->
+                    <Button
+                        android:id="@+id/microsoftLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="Continuer avec Microsoft"
+                        android:textColor="#ffffff"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:background="@drawable/microsoft_button_background"
+                        android:drawableStart="@android:drawable/ic_dialog_dialer"
+                        android:drawablePadding="12dp"
+                        android:gravity="center_vertical|center_horizontal"
+                        android:elevation="2dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Footer -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pas encore de compte ? "
+                    android:textColor="#888888"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/signUpText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="S'inscrire"
+                    android:textColor="#ff6b35"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:background="?android:attr/selectableItemBackground" />
+            </LinearLayout>
         </LinearLayout>
+    </ScrollView>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="16dp">
+    <!-- Indicateur de chargement -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:indeterminateTint="#ff6b35"
+        android:elevation="16dp" />
 
-            <Button
-                android:id="@+id/googleLoginButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="Google"
-                android:drawableTop="@android:drawable/ic_dialog_email"/>
-
-            <Button
-                android:id="@+id/facebookLoginButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="8dp"
-                android:text="Facebook"
-                android:drawableTop="@android:drawable/ic_dialog_info"/>
-
-            <Button
-                android:id="@+id/microsoftLoginButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="Microsoft"
-                android:drawableTop="@android:drawable/ic_dialog_dialer"/>
-        </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+</RelativeLayout>

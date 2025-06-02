@@ -69,71 +69,136 @@ class MessageAdapter(
     override fun getItemCount(): Int = messages.size
 
     inner class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val messageContainer: LinearLayout = itemView.findViewById(R.id.message_container)
+        // Containers principaux
+        private val otherMessageContainer: LinearLayout =
+            itemView.findViewById(R.id.other_message_container)
+        private val myMessageContainer: LinearLayout =
+            itemView.findViewById(R.id.my_message_container)
+
+        // Éléments pour les messages des autres
         private val userInfo: TextView = itemView.findViewById(R.id.userInfo)
         private val messageText: TextView = itemView.findViewById(R.id.messageText)
         private val timestampText: TextView = itemView.findViewById(R.id.timestamp)
-        private val actionsLayout: LinearLayout = itemView.findViewById(R.id.message_actions)
-        private val reactionsLayout: LinearLayout = itemView.findViewById(R.id.reactions_layout)
+        private val actionsLayoutOther: LinearLayout =
+            itemView.findViewById(R.id.message_actions_other)
+        private val reactionsLayoutOther: LinearLayout =
+            itemView.findViewById(R.id.reactions_layout_other)
+        private val replyInfoContainerOther: LinearLayout =
+            itemView.findViewById(R.id.reply_info_container_other)
+        private val replyInfoTextOther: TextView = itemView.findViewById(R.id.reply_info_text_other)
+
+        // Éléments pour mes messages
+        private val messageTextMy: TextView = itemView.findViewById(R.id.messageText_my)
+        private val timestampTextMy: TextView = itemView.findViewById(R.id.timestamp_my_bottom)
+        private val actionsLayoutMy: LinearLayout = itemView.findViewById(R.id.message_actions_my)
+        private val reactionsLayoutMy: LinearLayout =
+            itemView.findViewById(R.id.reactions_layout_my)
+        private val replyInfoContainerMy: LinearLayout =
+            itemView.findViewById(R.id.reply_info_container_my)
+        private val replyInfoTextMy: TextView = itemView.findViewById(R.id.reply_info_text_my)
+
+        // Éléments communs
         private val repliesLayout: LinearLayout = itemView.findViewById(R.id.replies_layout)
         private val repliesCount: TextView = itemView.findViewById(R.id.replies_count)
-        private val replyInfoContainer: LinearLayout = itemView.findViewById(R.id.reply_info_container)
-        private val replyInfoText: TextView = itemView.findViewById(R.id.reply_info_text)
 
-        // Boutons d'action
+        // Boutons d'action pour les autres
+        private val reactButtonOther: ImageButton = itemView.findViewById(R.id.btn_react_other)
+        private val replyButtonOther: ImageButton = itemView.findViewById(R.id.btn_reply_other)
+
+        // Boutons d'action pour mes messages
         private val editButton: ImageButton = itemView.findViewById(R.id.btn_edit)
         private val deleteButton: ImageButton = itemView.findViewById(R.id.btn_delete)
         private val reactButton: ImageButton = itemView.findViewById(R.id.btn_react)
         private val replyButton: ImageButton = itemView.findViewById(R.id.btn_reply)
 
         fun bind(message: Message) {
-            // Afficher les informations de base
-            userInfo.text = message.getNomAuteur()
-            messageText.text = message.contenu
-
-            // Formater et afficher la date si disponible
-            message.dateCreation?.let {
-                try {
-                    val date = inputDateFormat.parse(it)
-                    timestampText.text = dateFormat.format(date!!)
-                    timestampText.visibility = View.VISIBLE
-                } catch (e: Exception) {
-                    timestampText.text = it
-                    timestampText.visibility = View.VISIBLE
-                    Log.d(TAG, "Erreur de format de date: ${e.message}")
-                }
-            } ?: run {
-                timestampText.visibility = View.GONE
-            }
-
-            // Déterminer si c'est mon message - CORRIGÉ
+            // Déterminer si c'est mon message
             val messageAuthor = message.getNomAuteur().trim()
             val isMyMessage = currentUsername.trim().equals(messageAuthor, ignoreCase = true)
 
-            // Log pour débogage
-            Log.d(TAG, "Message ${message.id} - Auteur: '$messageAuthor', Username: '$currentUsername', isMyMessage: $isMyMessage")
+            Log.d(
+                TAG,
+                "Message ${message.id} - Auteur: '$messageAuthor', Username: '$currentUsername', isMyMessage: $isMyMessage"
+            )
 
-            // Si c'est une réponse, afficher à qui on répond
-            if (message.isReply()) {
-                replyInfoContainer.visibility = View.VISIBLE
-                // Idéalement, vous devriez récupérer le nom de l'auteur du message parent
-                replyInfoText.text = "Réponse à un message"
+            if (isMyMessage) {
+                // Afficher mes messages à droite
+                otherMessageContainer.visibility = View.GONE
+                myMessageContainer.visibility = View.VISIBLE
+
+                // Configurer le contenu de mes messages
+                messageTextMy.text = message.contenu
+
+                // Formater et afficher la date
+                message.dateCreation?.let {
+                    try {
+                        val date = inputDateFormat.parse(it)
+                        timestampTextMy.text = dateFormat.format(date!!)
+                        timestampTextMy.visibility = View.VISIBLE
+                    } catch (e: Exception) {
+                        timestampTextMy.text = it
+                        timestampTextMy.visibility = View.VISIBLE
+                    }
+                } ?: run {
+                    timestampTextMy.visibility = View.GONE
+                }
+
+                // Gérer les réponses pour mes messages
+                if (message.isReply()) {
+                    replyInfoContainerMy.visibility = View.VISIBLE
+                    replyInfoTextMy.text = "Réponse à un message"
+                } else {
+                    replyInfoContainerMy.visibility = View.GONE
+                }
+
+                // Afficher les réactions pour mes messages
+                displayReactions(message, reactionsLayoutMy, true)
+
+                // Gérer les actions pour mes messages
+                actionsLayoutMy.visibility = View.GONE
+
             } else {
-                replyInfoContainer.visibility = View.GONE
+                // Afficher les messages des autres à gauche
+                myMessageContainer.visibility = View.GONE
+                otherMessageContainer.visibility = View.VISIBLE
+
+                // Configurer le contenu des messages des autres
+                userInfo.text = message.getNomAuteur()
+                messageText.text = message.contenu
+
+                // Formater et afficher la date
+                message.dateCreation?.let {
+                    try {
+                        val date = inputDateFormat.parse(it)
+                        timestampText.text = dateFormat.format(date!!)
+                        timestampText.visibility = View.VISIBLE
+                    } catch (e: Exception) {
+                        timestampText.text = it
+                        timestampText.visibility = View.VISIBLE
+                    }
+                } ?: run {
+                    timestampText.visibility = View.GONE
+                }
+
+                // Gérer les réponses pour les messages des autres
+                if (message.isReply()) {
+                    replyInfoContainerOther.visibility = View.VISIBLE
+                    replyInfoTextOther.text = "Réponse à un message"
+                } else {
+                    replyInfoContainerOther.visibility = View.GONE
+                }
+
+                // Afficher les réactions pour les messages des autres
+                displayReactions(message, reactionsLayoutOther, false)
+
+                // Gérer les actions pour les messages des autres
+                actionsLayoutOther.visibility = View.GONE
             }
 
-            // Cacher les actions par défaut, elles seront affichées au clic
-            actionsLayout.visibility = View.GONE
-
-            // Afficher les réactions
-            displayReactions(message)
-
-            // Afficher l'indication des réponses si nécessaire
+            // Afficher l'indication des réponses (commun aux deux types)
             if (message.hasReplies()) {
                 repliesLayout.visibility = View.VISIBLE
                 repliesCount.text = "Voir les réponses (${message.getReplyCount()})"
-
-                // Configurer le clic pour voir les réponses
                 repliesLayout.setOnClickListener {
                     listener.onViewReplies(message)
                 }
@@ -144,62 +209,52 @@ class MessageAdapter(
             // Vérifier si ce message doit avoir ses actions affichées
             if (message.id == expandedMessageId) {
                 showActions(message, isMyMessage)
-            } else {
-                actionsLayout.visibility = View.GONE
             }
 
             // Configurer le clic sur le message pour afficher/masquer les actions
-            messageContainer.setOnClickListener {
+            itemView.setOnClickListener {
                 toggleActions(message, isMyMessage)
             }
 
             // Configurer le clic long sur le message pour afficher les options
-            messageContainer.setOnLongClickListener {
+            itemView.setOnLongClickListener {
                 showContextMenu(message, isMyMessage)
                 true
             }
         }
 
-        /**
-         * Affiche ou masque les actions sur le message
-         */
         private fun toggleActions(message: Message, isMyMessage: Boolean) {
             if (message.id == expandedMessageId) {
-                // Si les actions sont déjà affichées, les masquer
-                actionsLayout.visibility = View.GONE
+                // Masquer les actions
+                if (isMyMessage) {
+                    actionsLayoutMy.visibility = View.GONE
+                } else {
+                    actionsLayoutOther.visibility = View.GONE
+                }
                 expandedMessageId = null
             } else {
-                // Sinon, afficher les actions
+                // Afficher les actions
                 showActions(message, isMyMessage)
                 expandedMessageId = message.id
             }
 
-            // Notifier l'adaptateur que les données ont changé
-            // pour masquer les actions des autres messages
-            notifyDataSetChanged()
+            // ✅ CORRECTION: Ne pas faire notifyDataSetChanged() qui peut causer des problèmes
+            // notifyDataSetChanged()  // ← ENLEVER CETTE LIGNE
+
+            // À la place, juste notifier le changement pour cet item spécifique
+            val currentPosition = adapterPosition
+            if (currentPosition != RecyclerView.NO_POSITION) {
+                notifyItemChanged(currentPosition)
+            }
         }
 
-        /**
-         * Affiche les actions adaptées au message - CORRIGÉ
-         */
         private fun showActions(message: Message, isMyMessage: Boolean) {
             Log.d(TAG, "showActions - messageId: ${message.id}, isMyMessage: $isMyMessage")
 
-            // Rendre visible le layout d'actions
-            actionsLayout.visibility = View.VISIBLE
-
-            // Ajouter une animation pour une transition fluide
-            val fadeIn = AlphaAnimation(0.0f, 1.0f)
-            fadeIn.duration = 200
-            actionsLayout.startAnimation(fadeIn)
-
-            // Pour les messages de l'utilisateur courant
             if (isMyMessage) {
-                Log.d(TAG, "Affichage des boutons éditer/supprimer car c'est mon message")
-                editButton.visibility = View.VISIBLE
-                deleteButton.visibility = View.VISIBLE
+                // Afficher les actions pour mes messages
+                actionsLayoutMy.visibility = View.VISIBLE
 
-                // Configurer les listeners des boutons
                 editButton.setOnClickListener {
                     Log.d(TAG, "Clic sur éditer pour message ${message.id}")
                     listener.onEditMessage(message)
@@ -208,31 +263,43 @@ class MessageAdapter(
                     Log.d(TAG, "Clic sur supprimer pour message ${message.id}")
                     listener.onDeleteMessage(message)
                 }
+                reactButton.setOnClickListener {
+                    Log.d(TAG, "Clic sur réagir pour message ${message.id}")
+                    showReactionPicker(message)
+                }
+                replyButton.setOnClickListener {
+                    Log.d(TAG, "Clic sur répondre pour message ${message.id}")
+                    listener.onReplyToMessage(message)
+                }
             } else {
-                Log.d(TAG, "Masquage des boutons éditer/supprimer car ce n'est pas mon message")
-                editButton.visibility = View.GONE
-                deleteButton.visibility = View.GONE
-            }
+                // Afficher les actions pour les messages des autres
+                actionsLayoutOther.visibility = View.VISIBLE
 
-            // Ces boutons sont disponibles pour tous les messages
-            reactButton.visibility = View.VISIBLE
-            replyButton.visibility = View.VISIBLE
-            reactButton.setOnClickListener {
-                Log.d(TAG, "Clic sur réagir pour message ${message.id}")
-                showReactionPicker(message)
-            }
-            replyButton.setOnClickListener {
-                Log.d(TAG, "Clic sur répondre pour message ${message.id}")
-                listener.onReplyToMessage(message)
+                reactButtonOther.setOnClickListener {
+                    Log.d(TAG, "Clic sur réagir pour message ${message.id}")
+                    showReactionPicker(message)
+                }
+                replyButtonOther.setOnClickListener {
+                    Log.d(TAG, "Clic sur répondre pour message ${message.id}")
+                    listener.onReplyToMessage(message)
+                }
             }
         }
 
-        private fun displayReactions(message: Message) {
+        private fun displayReactions(
+            message: Message,
+            reactionsLayout: LinearLayout,
+            isMyMessage: Boolean
+        ) {
+            Log.d(TAG, "🎨 DISPLAY REACTIONS - Message ID: ${message.id}, isMyMessage: $isMyMessage")
+
             // Vider le conteneur de réactions
             reactionsLayout.removeAllViews()
 
             // Récupérer et afficher les réactions
             val reactionsList = message.getReactionsList()
+            Log.d(TAG, "🎨 DISPLAY REACTIONS - Liste: $reactionsList")
+
             if (reactionsList.isEmpty()) {
                 reactionsLayout.visibility = View.GONE
                 return
@@ -240,43 +307,43 @@ class MessageAdapter(
 
             // Afficher chaque réaction
             reactionsLayout.visibility = View.VISIBLE
+
             for ((emoji, count) in reactionsList) {
-                val reactionView = LayoutInflater.from(context)
-                    .inflate(R.layout.item_reaction, reactionsLayout, false)
+                try {
+                    val reactionView = LayoutInflater.from(context)
+                        .inflate(R.layout.item_reaction, reactionsLayout, false)
 
-                val emojiText = reactionView.findViewById<TextView>(R.id.emoji_text)
-                val countText = reactionView.findViewById<TextView>(R.id.count_text)
+                    val emojiText = reactionView.findViewById<TextView>(R.id.emoji_text)
+                    val countText = reactionView.findViewById<TextView>(R.id.count_text)
 
-                emojiText.text = emoji
-                countText.text = count.toString()
+                    emojiText.text = emoji
+                    countText.text = count.toString()
 
-                // Permettre d'ajouter la même réaction en cliquant dessus
-                reactionView.setOnClickListener {
-                    listener.onReactToMessage(message, emoji)
+                    // Permettre d'ajouter la même réaction en cliquant dessus
+                    reactionView.setOnClickListener {
+                        listener.onReactToMessage(message, emoji)
+                    }
+
+                    reactionsLayout.addView(reactionView)
+                    Log.d(TAG, "✅ DISPLAY REACTIONS - Vue ajoutée pour '$emoji'")
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ DISPLAY REACTIONS - Erreur création vue", e)
                 }
-
-                reactionsLayout.addView(reactionView)
             }
         }
 
-        /**
-         * Affiche le menu contextuel avec les options appropriées - CORRIGÉ
-         */
         private fun showContextMenu(message: Message, isMyMessage: Boolean) {
-            // Options disponibles selon si c'est mon message ou pas - CORRIGÉ
             val options = if (isMyMessage) {
                 arrayOf("Modifier", "Supprimer", "Réagir", "Répondre")
             } else {
-                arrayOf("Réagir", "Répondre") // Seulement ces options pour les messages des autres
+                arrayOf("Réagir", "Répondre")
             }
 
-            // Afficher le menu contextuel
             android.app.AlertDialog.Builder(context)
                 .setTitle("Options")
                 .setItems(options) { _, which ->
-                    // Traitement des clics - CORRIGÉ
                     if (isMyMessage) {
-                        // Pour mes messages
                         when (which) {
                             0 -> listener.onEditMessage(message)
                             1 -> listener.onDeleteMessage(message)
@@ -284,7 +351,6 @@ class MessageAdapter(
                             3 -> listener.onReplyToMessage(message)
                         }
                     } else {
-                        // Pour les messages des autres
                         when (which) {
                             0 -> showReactionPicker(message)
                             1 -> listener.onReplyToMessage(message)
@@ -294,13 +360,25 @@ class MessageAdapter(
                 .show()
         }
 
+
         private fun showReactionPicker(message: Message) {
             val emojis = arrayOf("👍", "❤️", "😂", "😮", "😢", "👏", "🔥", "🎉", "🤔", "👎")
 
+            // ✅ CORRECTION: S'assurer que le dialog ne cause pas de navigation
             android.app.AlertDialog.Builder(context)
                 .setTitle("Choisir une réaction")
-                .setItems(emojis) { _, which ->
+                .setItems(emojis) { dialog, which ->
+                    Log.d(TAG, "🎭 Emoji sélectionné: ${emojis[which]}")
+
+                    // ✅ CORRECTION: Appeler directement le listener sans navigation
                     listener.onReactToMessage(message, emojis[which])
+
+                    // Fermer le dialog immédiatement
+                    dialog.dismiss()
+                }
+                .setOnCancelListener { dialog ->
+                    Log.d(TAG, "Dialog réactions annulé")
+                    dialog.dismiss()
                 }
                 .show()
         }

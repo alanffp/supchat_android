@@ -1,155 +1,356 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/message_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp"
-    android:id="@+id/message_container">
+    android:background="?android:attr/selectableItemBackground"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp">
 
-    <!-- Info sur la réponse (si c'est une réponse) -->
+    <!-- Container pour messages des autres (à gauche) -->
     <LinearLayout
-        android:id="@+id/reply_info_container"
-        android:layout_width="match_parent"
+        android:id="@+id/other_message_container"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:visibility="gone"
-        android:layout_marginBottom="4dp">
-        
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@android:drawable/ic_menu_revert"
-            android:tint="#AAAAAA"
-            android:layout_gravity="center_vertical"/>
+        android:layout_gravity="start"
+        android:orientation="vertical"
+        android:maxWidth="280dp"
+        android:visibility="visible">
+
+        <!-- Info sur la réponse (si c'est une réponse) -->
+        <LinearLayout
+            android:id="@+id/reply_info_container_other"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginBottom="4dp"
+            android:paddingStart="12dp">
             
-        <TextView
-            android:id="@+id/reply_info_text"
+            <View
+                android:layout_width="3dp"
+                android:layout_height="16dp"
+                android:background="#ff6b35"
+                android:layout_marginEnd="8dp"
+                android:layout_gravity="center_vertical" />
+                
+            <TextView
+                android:id="@+id/reply_info_text_other"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Réponse à @utilisateur"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:textColor="#888888" />
+        </LinearLayout>
+
+        <!-- Contenu du message des autres -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Réponse à @utilisateur"
-            android:textSize="12sp"
-            android:textStyle="italic"
-            android:textColor="#AAAAAA"
-            android:layout_marginStart="4dp"/>
-    </LinearLayout>
+            android:orientation="horizontal">
 
-    <!-- Contenu principal du message -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+            <!-- Avatar de l'utilisateur -->
+            <ImageView
+                android:id="@+id/user_avatar_other"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/avatar_background_other"
+                android:src="@android:drawable/ic_menu_myplaces"
+                android:scaleType="centerCrop"
+                android:layout_gravity="bottom" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <!-- Entête du message avec auteur et date -->
+            <!-- Bulle de message des autres -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:background="@drawable/message_bubble_other"
+                android:padding="12dp"
+                android:elevation="2dp">
 
+                <!-- En-tête du message (nom + timestamp) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="4dp">
+
+                    <TextView
+                        android:id="@+id/userInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nom d'utilisateur"
+                        android:textColor="#ffffff"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        tools:text="JohnDoe" />
+
+                    <TextView
+                        android:id="@+id/timestamp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="14:30"
+                        android:textColor="#b3ffffff"
+                        android:textSize="11sp"
+                        android:layout_marginStart="8dp"
+                        tools:text="14:30" />
+                </LinearLayout>
+
+                <!-- Contenu du message -->
                 <TextView
-                    android:id="@+id/userInfo"
+                    android:id="@+id/messageText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/timestamp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textSize="12sp"
-                    android:textColor="#AAAAAA" />
+                    android:text="Contenu du message"
+                    android:textColor="#ffffff"
+                    android:textSize="16sp"
+                    android:lineSpacingExtra="2dp"
+                    android:textIsSelectable="true"
+                    tools:text="Voici le contenu du message" />
             </LinearLayout>
+        </LinearLayout>
 
-            <!-- Contenu du message -->
-            <TextView
-                android:id="@+id/messageText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
+        <!-- Conteneur des réactions pour les autres -->
+        <LinearLayout
+            android:id="@+id/reactions_layout_other"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:layout_marginStart="44dp"
+            android:visibility="gone"
+            android:gravity="start">
+            <!-- Les réactions seront ajoutées dynamiquement ici -->
+        </LinearLayout>
+
+        <!-- Actions du message pour les autres -->
+        <LinearLayout
+            android:id="@+id/message_actions_other"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:layout_marginStart="44dp"
+            android:gravity="start"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btn_react_other"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_add"
+                android:background="@drawable/action_button_background"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="Réagir"
+                android:tint="#cccccc" />
+
+            <ImageButton
+                android:id="@+id/btn_reply_other"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:background="@drawable/action_button_background"
+                android:contentDescription="Répondre"
+                android:tint="#cccccc" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Actions de message (éditer, supprimer, réagir, répondre) -->
+    <!-- Container pour mes messages (à droite) -->
     <LinearLayout
-        android:id="@+id/message_actions"
+        android:id="@+id/my_message_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_gravity="end"
-        android:layout_marginTop="4dp"
+        android:orientation="vertical"
+        android:maxWidth="280dp"
         android:visibility="gone">
 
-        <ImageButton
-            android:id="@+id/btn_edit"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_edit"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Modifier" />
+        <!-- Info sur la réponse pour mes messages -->
+        <LinearLayout
+            android:id="@+id/reply_info_container_my"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginBottom="4dp"
+            android:paddingEnd="12dp"
+            android:gravity="end">
+            
+            <TextView
+                android:id="@+id/reply_info_text_my"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Réponse à @utilisateur"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                android:textColor="#888888"
+                android:layout_marginEnd="8dp" />
 
-        <ImageButton
-            android:id="@+id/btn_delete"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Supprimer" />
+            <View
+                android:layout_width="3dp"
+                android:layout_height="16dp"
+                android:background="#ff6b35"
+                android:layout_gravity="center_vertical" />
+        </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btn_react"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_add"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Réagir" />
+        <!-- Bulle de mes messages -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/message_bubble_my"
+            android:padding="12dp"
+            android:elevation="2dp">
 
-        <ImageButton
-            android:id="@+id/btn_reply"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@android:drawable/ic_menu_revert"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Répondre" />
+            <!-- Timestamp en haut pour mes messages -->
+            <TextView
+                android:id="@+id/timestamp_my"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="14:30"
+                android:textColor="#b3ffffff"
+                android:textSize="11sp"
+                android:layout_gravity="end"
+                android:layout_marginBottom="4dp"
+                android:visibility="gone"
+                tools:text="14:30" />
+
+            <!-- Contenu de mes messages -->
+            <TextView
+                android:id="@+id/messageText_my"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mon message"
+                android:textColor="#ffffff"
+                android:textSize="16sp"
+                android:lineSpacingExtra="2dp"
+                android:textIsSelectable="true"
+                tools:text="Voici mon message" />
+
+            <!-- Indicateur de statut (lu/envoyé) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_gravity="end"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/timestamp_my_bottom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="14:30"
+                    android:textColor="#b3ffffff"
+                    android:textSize="11sp"
+                    android:layout_marginEnd="4dp"
+                    tools:text="14:30" />
+
+                <ImageView
+                    android:id="@+id/message_status"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@android:drawable/ic_menu_agenda"
+                    android:tint="#4CAF50"
+                    android:layout_gravity="center_vertical" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Conteneur des réactions pour mes messages -->
+        <LinearLayout
+            android:id="@+id/reactions_layout_my"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:visibility="gone"
+            android:gravity="end">
+            <!-- Les réactions seront ajoutées dynamiquement ici -->
+        </LinearLayout>
+
+        <!-- Actions pour mes messages -->
+        <LinearLayout
+            android:id="@+id/message_actions_my"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:gravity="end"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btn_edit"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_edit"
+                android:background="@drawable/action_button_background"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="Modifier"
+                android:tint="#cccccc" />
+
+            <ImageButton
+                android:id="@+id/btn_delete"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_delete"
+                android:background="@drawable/action_button_background"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="Supprimer"
+                android:tint="#f44336" />
+
+            <ImageButton
+                android:id="@+id/btn_react"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_add"
+                android:background="@drawable/action_button_background"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="Réagir"
+                android:tint="#cccccc" />
+
+            <ImageButton
+                android:id="@+id/btn_reply"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_menu_revert"
+                android:background="@drawable/action_button_background"
+                android:contentDescription="Répondre"
+                android:tint="#cccccc" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Conteneur pour les réactions -->
+    <!-- Indicateur de réponses (en bas, centré) -->
     <LinearLayout
-        android:id="@+id/reactions_layout"
+        android:id="@+id/replies_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="4dp"
-        android:visibility="gone" />
-
-    <!-- Section pour les réponses -->
-    <LinearLayout
-        android:id="@+id/replies_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="4dp"
-        android:visibility="gone">
+        android:background="@drawable/replies_indicator_background"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        android:visibility="gone"
+        android:gravity="center_vertical">
 
         <ImageView
             android:layout_width="16dp"
             android:layout_height="16dp"
-            android:src="@android:drawable/ic_menu_view"
-            android:layout_gravity="center_vertical" />
+            android:src="@android:drawable/ic_menu_revert"
+            android:tint="#ff6b35"
+            android:layout_marginEnd="4dp" />
 
         <TextView
             android:id="@+id/replies_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="Voir les réponses (0)"
-            android:textColor="#3F51B5"
-            android:textSize="14sp" />
+            android:text="Voir les réponses"
+            android:textColor="#ff6b35"
+            android:textSize="12sp"
+            android:textStyle="bold" />
     </LinearLayout>
-</LinearLayout>
+
+</FrameLayout>

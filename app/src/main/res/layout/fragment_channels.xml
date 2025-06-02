@@ -3,29 +3,51 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#2F3136">
+    android:background="#2f3136">
 
-    <TextView
-        android:id="@+id/server_name"
+    <!-- En-tête du serveur -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="SupChat Server"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:padding="16dp"
-        android:background="#202225" />
+        android:layout_height="48dp"
+        android:background="#36393f"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp">
 
+        <TextView
+            android:id="@+id/server_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nom du serveur"
+            android:textColor="#ffffff"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!-- Titre des canaux -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:text="CANAUX TEXTUELS"
+        android:textColor="#8e9297"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp" />
+
+    <!-- Liste des canaux -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
         <LinearLayout
             android:id="@+id/channels_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
-            <!-- Les canaux seront ajoutés dynamiquement ici -->
-        </LinearLayout>
+            android:padding="8dp" />
+
     </ScrollView>
+
 </LinearLayout>
