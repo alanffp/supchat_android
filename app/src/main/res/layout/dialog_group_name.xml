@@ -8,9 +8,10 @@
 
     <!-- Titre -->
     <TextView
+        android:id="@+id/dialog_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="👥 Nom du groupe"
+        android:text="💬 Créer une conversation"
         android:textColor="@android:color/white"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -19,9 +20,10 @@
 
     <!-- Description -->
     <TextView
+        android:id="@+id/dialog_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Choisissez un nom pour votre groupe.\nVous pourrez ensuite ajouter des participants."
+        android:text="Donnez un nom à votre conversation.\nVous pourrez ensuite ajouter des participants."
         android:textColor="#CCFFFFFF"
         android:textSize="14sp"
         android:gravity="center"
@@ -32,7 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="24dp"
-        android:hint="Nom du groupe">
+        android:hint="Nom de la conversation">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/group_name_input"
@@ -67,7 +69,7 @@
             android:id="@+id/confirm_group_name_button"
             android:layout_width="wrap_content"
             android:layout_height="40dp"
-            android:text="✓ Confirmer"
+            android:text="✓ Créer"
             android:textSize="14sp"
             android:backgroundTint="#27AE60"
             android:textColor="@android:color/white" />

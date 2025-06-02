@@ -25,11 +25,14 @@ import com.example.supchat.ui.search.UserSearchFragment
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import androidx.core.content.edit
 import com.example.supchat.SupChatApplication
 import com.example.supchat.api.ApiClient
 import com.example.supchat.socket.WebSocketService
 import com.example.supchat.ui.conversation.CreateConversationFragment
+import android.app.AlertDialog
+import android.view.LayoutInflater
+import android.widget.Button
+import com.google.android.material.textfield.TextInputEditText
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
@@ -68,11 +71,13 @@ class HomeActivity : AppCompatActivity() {
         profileButton = findViewById(R.id.profile_text)
         searchUsersButton = findViewById(R.id.search_users_text)
 
+        // ✅ MODIFICATION: Configuration du bouton "Créer une conversation" avec dialogue
         val createConversationText = findViewById<TextView>(R.id.create_conversation_text)
         createConversationText.setOnClickListener {
             drawerLayout.closeDrawer(GravityCompat.END)
-            showCreateConversationFragment()
+            showConversationTypeDialog() // ✅ Nouvelle méthode
         }
+
         // Initialiser le bouton de gestion des workspaces
         val manageWorkspacesButton = findViewById<TextView>(R.id.manage_workspaces_text)
         manageWorkspacesButton.setOnClickListener {
@@ -136,6 +141,63 @@ class HomeActivity : AppCompatActivity() {
 
         // Afficher l'écran d'accueil en attendant
         showWelcomeScreen()
+    }
+    private fun showConversationTypeDialog() {
+        // ✅ NOUVEAU: Dialogue direct pour saisir le nom de la conversation
+        showConversationNameDialog()
+    }
+
+    private fun showConversationNameDialog() {
+        val dialogView = LayoutInflater.from(this)
+            .inflate(R.layout.dialog_group_name, null)
+
+        val conversationNameInput: TextInputEditText = dialogView.findViewById(R.id.group_name_input)
+        val confirmButton: Button = dialogView.findViewById(R.id.confirm_group_name_button)
+        val cancelButton: Button = dialogView.findViewById(R.id.cancel_group_name_button)
+
+        // ✅ Modifier les textes pour être plus génériques
+        val titleText = dialogView.findViewById<TextView>(R.id.dialog_title) // Si vous avez un titre dans le dialogue
+        titleText?.text = "💬 Créer une conversation"
+
+        val descriptionText = dialogView.findViewById<TextView>(R.id.dialog_description) // Si vous avez une description
+        descriptionText?.text = "Donnez un nom à votre conversation.\nVous pourrez ensuite ajouter des participants."
+
+        // Changer le hint du champ de saisie
+        conversationNameInput.hint = "Nom de la conversation"
+
+        // Changer le texte du bouton
+        confirmButton.text = "✓ Créer"
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        confirmButton.setOnClickListener {
+            val conversationName = conversationNameInput.text.toString().trim()
+            if (conversationName.isNotEmpty()) {
+                dialog.dismiss()
+                // ✅ Toujours créer comme un groupe avec le nom donné
+                openCreateConversationFragment(isGroup = true, groupName = conversationName)
+            } else {
+                Toast.makeText(this, "Veuillez saisir un nom de conversation", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+    private fun openCreateConversationFragment(isGroup: Boolean, groupName: String?) {
+        val fragment = CreateConversationFragment.newInstance(isGroup, groupName)
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.main_content_container, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     // ✅ Méthode pour initialiser WebSocket
@@ -586,10 +648,8 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun showCreateConversationFragment() {
-        val fragment = CreateConversationFragment.newInstance()
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.main_content_container, fragment)
-            .addToBackStack(null)
-            .commit()
+        // Cette méthode est maintenant remplacée par showConversationTypeDialog()
+        // Gardez-la pour compatibilité si elle est utilisée ailleurs, sinon supprimez-la
+        showConversationTypeDialog()
     }
 }

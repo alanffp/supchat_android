@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- ✅ NOUVELLES permissions pour fichiers -->
+    <!-- Permissions pour fichiers -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
-    <!-- ✅ CORRECTION: Spécifier que la caméra est optionnelle -->
+    <!-- Spécifier que la caméra est optionnelle -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -47,11 +47,55 @@
             </intent-filter>
         </activity>
 
-        <!-- LoginActivity -->
+        <!-- LoginActivity avec support OAuth -->
         <activity
             android:name=".ui.auth.LoginActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Supchat" />
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.Supchat">
+
+            <!-- ✅ NOUVEAU: Intent filters pour les callbacks OAuth -->
+            <!-- Callback Google -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http"
+                    android:host="10.0.2.2"
+                    android:port="3000"
+                    android:path="/api/v1/auth/google/callback" />
+            </intent-filter>
+
+            <!-- Callback Facebook -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http"
+                    android:host="10.0.2.2"
+                    android:port="3000"
+                    android:path="/api/v1/auth/facebook/callback" />
+            </intent-filter>
+
+            <!-- Callback Microsoft -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http"
+                    android:host="10.0.2.2"
+                    android:port="3000"
+                    android:path="/api/v1/auth/microsoft/callback" />
+            </intent-filter>
+
+            <!-- ✅ Scheme personnalisé pour plus de sécurité (optionnel) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="supchat" />
+            </intent-filter>
+        </activity>
 
         <!-- RegisterActivity -->
         <activity
@@ -71,7 +115,7 @@
             android:exported="false"
             android:theme="@style/Theme.Supchat" />
 
-        <!-- ✅ FileProvider pour partage de fichiers sécurisé -->
+        <!-- FileProvider pour partage de fichiers sécurisé -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

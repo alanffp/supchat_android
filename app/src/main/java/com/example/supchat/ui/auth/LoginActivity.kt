@@ -1,6 +1,5 @@
 package com.example.supchat.ui.auth
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -10,9 +9,10 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import com.example.supchat.R
-import com.example.supchat.SupChatApplication
 import com.example.supchat.api.ApiClient
+import com.example.supchat.auth.OAuthHelper
 import com.example.supchat.models.request.LoginRequest
 import com.example.supchat.models.response.LoginResponse
 import com.example.supchat.ui.home.HomeActivity
@@ -20,8 +20,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class LoginActivity : AppCompatActivity() {
-    // Composants de l'interface utilisateur
+class LoginActivity : AppCompatActivity(), OAuthHelper.OAuthCallback {
     private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
     private lateinit var loginButton: Button
@@ -30,15 +29,36 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var facebookLoginButton: Button
     private lateinit var microsoftLoginButton: Button
 
+    private lateinit var oAuthHelper: OAuthHelper
+
+    companion object {
+        private const val TAG = "LoginActivity"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Appliquer le thème sauvegardé
+        applyTheme()
+
         setContentView(R.layout.activity_login)
 
-        // Initialisation des vues
+        // Initialiser les vues
         initializeViews()
 
-        // Configuration des listeners
+        // Initialiser OAuth Helper
+        oAuthHelper = OAuthHelper(this)
+
+        // Configurer les listeners
         setupListeners()
+
+        // Gérer les deep links (callbacks OAuth)
+        handleDeepLink(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.let { handleDeepLink(it) }
     }
 
     private fun initializeViews() {
@@ -52,191 +72,172 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+        // Connexion classique
+        loginButton.setOnClickListener {
+            performLogin()
+        }
+
         // Mot de passe oublié
         forgotPasswordText.setOnClickListener {
-            startActivity(Intent(this, ForgotPasswordActivity::class.java))
+            // TODO: Implémenter la fonctionnalité mot de passe oublié
+            Toast.makeText(this, "Fonctionnalité à venir", Toast.LENGTH_SHORT).show()
         }
 
-        // Connexion standard
-        loginButton.setOnClickListener {
-            val email = emailEditText.text.toString().trim()
-            val password = passwordEditText.text.toString()
-
-            if (validateLoginInput(email, password)) {
-                performStandardLogin(email, password)
-            }
-        }
-
-        // Connexions OAuth (à adapter selon votre besoin)
+        // OAuth Login Buttons
         googleLoginButton.setOnClickListener {
-            initiateOAuthLogin("google")
+            Log.d(TAG, "Début de l'authentification Google")
+            oAuthHelper.initiateGoogleLogin(this)
         }
+
         facebookLoginButton.setOnClickListener {
-            initiateOAuthLogin("facebook")
+            Log.d(TAG, "Début de l'authentification Facebook")
+            oAuthHelper.initiateFacebookLogin(this)
         }
+
         microsoftLoginButton.setOnClickListener {
-            initiateOAuthLogin("microsoft")
+            Log.d(TAG, "Début de l'authentification Microsoft")
+            oAuthHelper.initiateMicrosoftLogin(this)
         }
     }
 
-    private fun initiateOAuthLogin(provider: String) {
-        val loginCall = when (provider) {
-            "google" -> ApiClient.instance.initiateGoogleLogin()
-            "facebook" -> ApiClient.instance.initiateFacebookLogin()
-            "microsoft" -> ApiClient.instance.initiateMicrosoftLogin()
-            else -> throw IllegalArgumentException("Provider non supporté")
-        }
+    private fun handleDeepLink(intent: Intent) {
+        val data: Uri? = intent.data
+        if (data != null) {
+            val url = data.toString()
+            Log.d(TAG, "Deep link reçu: $url")
 
-        loginCall.enqueue(object : Callback<Void> {
-            override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                if (response.isSuccessful) {
-                    val authUrl = response.headers().get("Location")
-                    if (authUrl != null) {
-                        openAuthInBrowser(authUrl)
-                    } else {
-                        Toast.makeText(
-                            this@LoginActivity,
-                            "URL de connexion $provider non disponible",
-                            Toast.LENGTH_SHORT
-                        ).show()
+            if (oAuthHelper.isOAuthCallback(url)) {
+                // ✅ AJOUT: Vérifier s'il y a une erreur dans l'URL
+                if (oAuthHelper.hasError(url)) {
+                    val errorMessage = oAuthHelper.getErrorMessage(url)
+                    Log.e(TAG, "Erreur OAuth détectée: $errorMessage")
+                    onError(errorMessage)
+                    return
+                }
+
+                val (code, state) = oAuthHelper.parseCallbackUrl(url)
+
+                if (code != null) {
+                    val provider = oAuthHelper.getProviderFromUrl(url)
+
+                    when (provider) {
+                        "google" -> {
+                            Log.d(TAG, "Traitement du callback Google")
+                            oAuthHelper.handleGoogleCallback(code, state, this)
+                        }
+                        "facebook" -> {
+                            Log.d(TAG, "Traitement du callback Facebook")
+                            oAuthHelper.handleFacebookCallback(code, state, this)
+                        }
+                        "microsoft" -> {
+                            Log.d(TAG, "Traitement du callback Microsoft")
+                            oAuthHelper.handleMicrosoftCallback(code, state, this)
+                        }
+                        else -> {
+                            Log.e(TAG, "Provider OAuth non reconnu dans l'URL: $url")
+                            Toast.makeText(this, "Erreur: Provider non reconnu", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 } else {
-                    Toast.makeText(
-                        this@LoginActivity,
-                        "Erreur de connexion $provider",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Log.e(TAG, "Code d'autorisation manquant dans l'URL de callback")
+                    Toast.makeText(this, "Erreur: Code d'autorisation manquant", Toast.LENGTH_SHORT).show()
                 }
             }
-
-            override fun onFailure(call: Call<Void>, t: Throwable) {
-                Toast.makeText(
-                    this@LoginActivity,
-                    "Échec de la connexion $provider: ${t.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
-    }
-
-    private fun openAuthInBrowser(authUrl: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
-        startActivity(intent)
-    }
-    private fun validateLoginInput(email: String, password: String): Boolean {
-        return when {
-            email.isEmpty() -> {
-                emailEditText.error = "Veuillez saisir votre email"
-                false
-            }
-            password.isEmpty() -> {
-                passwordEditText.error = "Veuillez saisir votre mot de passe"
-                false
-            }
-            else -> true
         }
     }
 
-    private fun performStandardLogin(email: String, password: String) {
+    private fun performLogin() {
+        val email = emailEditText.text.toString().trim()
+        val password = passwordEditText.text.toString().trim()
+
+        if (email.isEmpty()) {
+            emailEditText.error = "L'email est requis"
+            emailEditText.requestFocus()
+            return
+        }
+
+        if (password.isEmpty()) {
+            passwordEditText.error = "Le mot de passe est requis"
+            passwordEditText.requestFocus()
+            return
+        }
+
+        // Désactiver le bouton pendant la connexion
+        loginButton.isEnabled = false
+        loginButton.text = "Connexion..."
+
         val loginRequest = LoginRequest(email, password)
-        ApiClient.instance.loginUser(loginRequest).enqueue(object : Callback<LoginResponse> {
-            override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                Log.d("LoginActivity", "Réponse API reçue: ${response.code()}")
-                when {
-                    response.isSuccessful && response.body() != null -> {
-                        Log.d("LoginActivity", "Réponse réussie avec body: ${response.body()}")
-                        saveUserSession(response.body()!!)
-                        navigateToMainActivity()
-                        handleLoginSuccess(response.body())
-                    }
-                    else -> {
-                        Log.d("LoginActivity", "Erreur API: ${response.code()}, ${response.message()}")
-                        handleLoginError(response)
+
+        ApiClient.instance.loginUser(loginRequest)
+            .enqueue(object : Callback<LoginResponse> {
+                override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                    loginButton.isEnabled = true
+                    loginButton.text = "Se connecter"
+
+                    if (response.isSuccessful) {
+                        val loginResponse = response.body()
+                        if (loginResponse != null && loginResponse.success && !loginResponse.token.isNullOrEmpty()) {
+                            onSuccess(loginResponse)
+                        } else {
+                            val errorMessage = loginResponse?.message ?: loginResponse?.error ?: "Erreur inconnue"
+                            onError("Échec de la connexion: $errorMessage")
+                        }
+                    } else {
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "Erreur de connexion: ${response.code()}, $errorBody")
+                        onError("Erreur de connexion: ${response.code()}")
                     }
                 }
-            }
 
-            override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                handleLoginFailure(t)
-            }
-        })
+                override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                    loginButton.isEnabled = true
+                    loginButton.text = "Se connecter"
+                    Log.e(TAG, "Erreur réseau lors de la connexion", t)
+                    onError("Erreur réseau: ${t.message}")
+                }
+            })
     }
 
-    private fun saveUserSession(loginResponse: LoginResponse) {
-        // Logs avant la sauvegarde
-        Log.d("LoginActivity", "Sauvegarde session - Token: ${loginResponse.token?.take(10)}..., UserID: ${loginResponse.data?.user?.userId}")
+    // Implémentation de OAuthHelper.OAuthCallback
+    override fun onSuccess(loginResponse: LoginResponse) {
+        Log.d(TAG, "Connexion réussie")
 
-        getSharedPreferences("SupChatPrefs", MODE_PRIVATE).edit().apply {
-            putString("auth_token", loginResponse.token)
-            putString("user_id", loginResponse.data.user.userId) // ✅ CORRIGÉ: user_id au lieu de userid
-            putString("username", loginResponse.data.user.username) // Ajouter le username si disponible
-            apply()
-        }
+        // Sauvegarder les informations de l'utilisateur
+        val sharedPreferences = getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
 
-        // ✅ NOUVEAU: Initialiser WebSocket après connexion réussie
-        val app = application as SupChatApplication
-        loginResponse.token?.let { token ->
-            app.initializeWebSocket(token)
-            Log.d("LoginActivity", "WebSocket initialisé après connexion")
-        }
+        editor.putString("auth_token", loginResponse.token)
+        editor.putString("user_id", loginResponse.data.user.userId)
+        editor.putString("username", loginResponse.data.user.username)
+        editor.putString("email", loginResponse.data.user.email)
+        editor.putString("role", loginResponse.data.user.role)
+        editor.putBoolean("is_logged_in", true)
+        editor.apply()
 
-        // Vérification immédiate
-        val savedUserId = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("user_id", "")
-        Log.d("LoginActivity", "Vérification après sauvegarde - UserID sauvegardé: $savedUserId")
-    }
+        Log.d(TAG, "Informations utilisateur sauvegardées")
 
-    private fun navigateToMainActivity() {
-        Toast.makeText(this, "Connexion réussie", Toast.LENGTH_SHORT).show()
-
+        // Rediriger vers HomeActivity
         val intent = Intent(this, HomeActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
     }
 
-    private fun handleLoginSuccess(response: LoginResponse?) {
-        // Extraire l'ID utilisateur correctement
-        val userId = response?.data?.user?.userId
-        val username = response?.data?.user?.username
-        val token = response?.token
-
-        Log.d("LoginActivity", "Données de connexion: userId=${userId}, username=${username}, token=${token?.take(10)}...")
-
-        if (userId.isNullOrEmpty()) {
-            Log.e("LoginActivity", "ERREUR: ID utilisateur manquant ou null!")
-            Toast.makeText(this, "Erreur: données utilisateur incomplètes", Toast.LENGTH_SHORT).show()
-            return
+    override fun onError(error: String) {
+        Log.e(TAG, "Erreur de connexion: $error")
+        runOnUiThread {
+            Toast.makeText(this, error, Toast.LENGTH_LONG).show()
         }
-
-        // Sauvegarder les données utilisateur
-        val editor = getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE).edit()
-        editor.putString("user_id", userId) // ✅ CORRIGÉ
-        editor.putString("username", username)
-        editor.putString("auth_token", token)
-        editor.apply()
-
-        // ✅ NOUVEAU: Initialiser WebSocket
-        val app = application as SupChatApplication
-        token?.let {
-            app.initializeWebSocket(it)
-            Log.d("LoginActivity", "WebSocket initialisé avec succès")
-        }
-
-        // Vérification immédiate
-        val savedUserId = getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE).getString("user_id", "NON_TROUVÉ")
-        Log.d("LoginActivity", "ID utilisateur sauvegardé: $savedUserId")
     }
 
-    private fun handleLoginError(response: Response<LoginResponse>) {
-        val errorMessage = try {
-            response.errorBody()?.string() ?: "Erreur de connexion inconnue"
-        } catch (e: Exception) {
-            "Erreur de traitement"
-        }
-        Toast.makeText(this, "Email ou mot de passe incorrect", Toast.LENGTH_SHORT).show()
-    }
+    private fun applyTheme() {
+        val sharedPreferences = getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
+        val isDarkMode = sharedPreferences.getBoolean("dark_mode", false)
 
-    private fun handleLoginFailure(t: Throwable) {
-        Toast.makeText(this, "Connexion impossible", Toast.LENGTH_SHORT).show()
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
     }
 }

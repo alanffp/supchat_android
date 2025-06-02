@@ -16,6 +16,7 @@ import com.example.supchat.models.request.privatemessage.PrivateMessageRequest
 import com.example.supchat.models.request.ProfileUpdateRequest
 import com.example.supchat.models.request.ProfileUpdateResponse
 import com.example.supchat.models.request.Message.ReponseRequest
+import com.example.supchat.models.request.OAuthCallbackRequest
 import com.example.supchat.models.request.SendConversationMessageRequest
 import com.example.supchat.models.request.StatusResponse
 import com.example.supchat.models.request.StatusUpdateRequest
@@ -27,6 +28,7 @@ import com.example.supchat.models.response.AccountDeleteResponse
 import com.example.supchat.models.response.CanauxResponse
 import com.example.supchat.models.response.DeconnexionResponse
 import com.example.supchat.models.response.InvitationsResponse
+import com.example.supchat.models.response.LoginResponse
 import com.example.supchat.models.response.MembersResponse
 import com.example.supchat.models.response.MessagesResponse
 import com.example.supchat.models.response.PictureUpdateResponse
@@ -513,5 +515,21 @@ object ApiClient {
 
     fun getAllConversations(token: String): Call<PrivateMessagesResponse> {
         return instance.getAllConversations("Bearer $token")
+    }
+
+    // === OAUTH AUTHENTICATION ===
+    fun googleLoginCallback(code: String, state: String? = null): Call<LoginResponse> {
+        val request = OAuthCallbackRequest(code, state)
+        return instance.googleLoginCallback(request)
+    }
+
+    fun facebookLoginCallback(code: String, state: String? = null): Call<LoginResponse> {
+        val request = OAuthCallbackRequest(code, state)
+        return instance.facebookLoginCallback(request)
+    }
+
+    fun microsoftLoginCallback(code: String, state: String? = null): Call<LoginResponse> {
+        val request = OAuthCallbackRequest(code, state)
+        return instance.microsoftLoginCallback(request)
     }
 }

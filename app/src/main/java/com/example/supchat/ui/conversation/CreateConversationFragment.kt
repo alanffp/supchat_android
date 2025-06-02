@@ -31,9 +31,22 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
 
     companion object {
         private const val TAG = "CreateConversation"
+        private const val ARG_IS_GROUP = "is_group"
+        private const val ARG_GROUP_NAME = "group_name"
 
+        // ✅ MÉTHODES DE CRÉATION MISES À JOUR
         fun newInstance(): CreateConversationFragment {
             return CreateConversationFragment()
+        }
+
+        fun newInstance(isGroup: Boolean, groupName: String?): CreateConversationFragment {
+            val fragment = CreateConversationFragment()
+            val args = Bundle().apply {
+                putBoolean(ARG_IS_GROUP, isGroup)
+                putString(ARG_GROUP_NAME, groupName)
+            }
+            fragment.arguments = args
+            return fragment
         }
     }
 
@@ -53,7 +66,7 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
 
     // Données
     private val selectedParticipants = mutableListOf<UserSearchData>()
-    private var groupName: String = "" // ✅ AJOUT: Variable pour stocker le nom du groupe
+    private var groupName: String = ""
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -62,11 +75,51 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
     ): View? {
         val view = inflater.inflate(R.layout.fragment_create_conversation, container, false)
 
+        // ✅ RÉCUPÉRER LES ARGUMENTS PASSÉS DEPUIS HomeActivity
+        arguments?.let { args ->
+            val isGroup = args.getBoolean(ARG_IS_GROUP, false)
+            val preDefinedGroupName = args.getString(ARG_GROUP_NAME)
+
+            if (isGroup && !preDefinedGroupName.isNullOrEmpty()) {
+                groupName = preDefinedGroupName
+            }
+        }
+
         initViews(view)
         setupRecyclerViews()
         setupListeners()
 
+        // ✅ APPLIQUER LA CONFIGURATION INITIALE SELON LES PARAMÈTRES
+        applyInitialConfiguration()
+
         return view
+    }
+
+    /**
+     * Configure l'état initial du fragment selon les paramètres reçus
+     */
+    private fun applyInitialConfiguration() {
+        val isGroup = arguments?.getBoolean(ARG_IS_GROUP, false) ?: false
+
+        if (isGroup) {
+            // Cocher automatiquement la checkbox groupe
+            isGroupCheckbox.isChecked = true
+
+            // Afficher le bouton de nom de groupe
+            setGroupNameButton.visibility = View.VISIBLE
+
+            // Si un nom de groupe est pré-défini, l'afficher
+            if (groupName.isNotEmpty()) {
+                updateGroupNameDisplay()
+            }
+        } else {
+            // Pour une conversation privée, masquer les éléments de groupe
+            isGroupCheckbox.isChecked = false
+            setGroupNameButton.visibility = View.GONE
+            groupNameDisplay.visibility = View.GONE
+        }
+
+        updateCreateButtonState()
     }
 
     private fun initViews(view: View) {
@@ -79,7 +132,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
         setGroupNameButton = view.findViewById(R.id.set_group_name_button)
         groupNameDisplay = view.findViewById(R.id.group_name_display)
 
-        // ✅ CORRECTION: Configuration du bouton pour définir le nom du groupe
         setGroupNameButton.setOnClickListener {
             showGroupNameDialog()
         }
@@ -126,7 +178,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
 
         // Checkbox groupe
         isGroupCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            // ✅ CORRECTION: Afficher/masquer le bouton et l'affichage du nom
             setGroupNameButton.visibility = if (isChecked) View.VISIBLE else View.GONE
             updateGroupNameDisplay()
             updateCreateButtonState()
@@ -141,7 +192,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
         updateCreateButtonState()
     }
 
-    // ✅ AJOUT: Fonction pour afficher le dialogue de nom de groupe
     private fun showGroupNameDialog() {
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_group_name, null)
@@ -177,7 +227,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
         dialog.show()
     }
 
-    // ✅ AJOUT: Fonction pour mettre à jour l'affichage du nom du groupe
     private fun updateGroupNameDisplay() {
         if (isGroupCheckbox.isChecked && groupName.isNotEmpty()) {
             groupNameDisplay.text = "📝 Nom du groupe: $groupName"
@@ -227,7 +276,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
             selectedAdapter.notifyItemInserted(selectedParticipants.size - 1)
             updateCreateButtonState()
 
-            // Mettre à jour la recherche pour exclure cet utilisateur
             val currentQuery = searchInput.text.toString().trim()
             if (currentQuery.length >= 2) {
                 searchUsers(currentQuery)
@@ -242,7 +290,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
             selectedAdapter.notifyItemRemoved(index)
             updateCreateButtonState()
 
-            // Mettre à jour la recherche
             val currentQuery = searchInput.text.toString().trim()
             if (currentQuery.length >= 2) {
                 searchUsers(currentQuery)
@@ -253,7 +300,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
     private fun updateCreateButtonState() {
         val hasParticipants = selectedParticipants.isNotEmpty()
         val isGroup = isGroupCheckbox.isChecked
-        // ✅ CORRECTION: Vérifier si un nom de groupe est requis
         val hasName = if (isGroup) groupName.isNotEmpty() else true
 
         createButton.isEnabled = hasParticipants && hasName
@@ -267,7 +313,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
         }
 
         val isGroup = isGroupCheckbox.isChecked
-        // ✅ CORRECTION: Utiliser la variable groupName correctement
         val nom = if (isGroup) groupName.takeIf { it.isNotEmpty() } else null
         val participantIds = selectedParticipants.map { it.id }
 
@@ -290,8 +335,6 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
                         val conversationDetails = response.body()?.data?.conversation
                         if (conversationDetails != null) {
                             Toast.makeText(context, "Conversation créée avec succès", Toast.LENGTH_SHORT).show()
-
-                            // Ouvrir la conversation
                             openConversation(conversationDetails._id, conversationDetails.nom ?: "Conversation")
                         } else {
                             Toast.makeText(context, "Erreur lors de la création", Toast.LENGTH_SHORT).show()
@@ -318,7 +361,7 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
         val myUserId = getCurrentUserId()
         val conversationFragment = PrivateConversationFragment.newInstance(
             conversationId = conversationId,
-            otherUserId = "", // Pour les groupes, pas d'autre utilisateur spécifique
+            otherUserId = "",
             username = conversationName,
             myUserId = myUserId
         )

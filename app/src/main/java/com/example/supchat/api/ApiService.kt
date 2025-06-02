@@ -5,6 +5,7 @@ import com.example.supchat.models.request.AddParticipantRequest
 import com.example.supchat.models.request.CreateConversationRequest
 import com.example.supchat.models.request.ForgotPasswordRequest
 import com.example.supchat.models.request.LoginRequest
+import com.example.supchat.models.request.OAuthCallbackRequest
 import com.example.supchat.models.response.LoginResponse
 import com.example.supchat.models.request.MemberRoleUpdateRequest
 import com.example.supchat.models.request.Message.MessageRequest
@@ -63,15 +64,17 @@ interface ApiService {
     @POST("/api/v1/auth/mot-de-passe-oublie")
     fun forgotPassword(@Body request: ForgotPasswordRequest): Call<Void>
 
-    // Méthodes d'authentification OAuth
-    @GET("/api/v1/auth/google")
-    fun initiateGoogleLogin(): Call<Void>
+    // ✅ CORRECTION : Méthodes OAuth avec POST pour les callbacks
+    @POST("/api/v1/auth/google/callback")
+    fun googleLoginCallback(@Body request: OAuthCallbackRequest): Call<LoginResponse>
 
-    @GET("/api/v1/auth/facebook")
-    fun initiateFacebookLogin(): Call<Void>
+    @POST("/api/v1/auth/facebook/callback")
+    fun facebookLoginCallback(@Body request: OAuthCallbackRequest): Call<LoginResponse>
 
-    @GET("/api/v1/auth/microsoft")
-    fun initiateMicrosoftLogin(): Call<Void>
+    @POST("/api/v1/auth/microsoft/callback")
+    fun microsoftLoginCallback(@Body request: OAuthCallbackRequest): Call<LoginResponse>
+
+    // Note: Les endpoints GET sont gérés côté navigateur/WebView, pas directement par Retrofit
 
     @GET("/api/v1/workspaces")
     fun getWorkspacesFromApi(@Header("Authorization") token: String): Call<WorkspacesResponse>
@@ -108,7 +111,7 @@ interface ApiService {
         @Path("messageId") messageId: String,
         @Body messageRequest: MessageRequest
     ): Call<MessagesResponse>
-    // Supprimer un message
+
     @DELETE("api/v1/workspaces/{workspaceId}/canaux/{canalId}/messages/{messageId}")
     fun deleteMessage(
         @Header("Authorization") token: String,
@@ -117,7 +120,6 @@ interface ApiService {
         @Path("messageId") messageId: String
     ): Call<MessagesResponse>
 
-    // Réagir à un message
     @POST("/api/v1/workspaces/{workspaceId}/canaux/{canalId}/messages/{messageId}/reactions")
     fun addReaction(
         @Header("Authorization") token: String,
@@ -127,7 +129,6 @@ interface ApiService {
         @Body reactionRequest: ReactionRequest
     ): Call<MessagesResponse>
 
-    // Répondre à un message
     @POST("/api/v1/workspaces/{workspaceId}/canaux/{canalId}/messages/{messageId}/reponses")
     fun replyToMessage(
         @Header("Authorization") token: String,
@@ -146,43 +147,30 @@ interface ApiService {
         @Body themeUpdateRequest: ThemeUpdateRequest
     ): Call<ThemeResponse>
 
-    /**
-     * Met à jour le statut de l'utilisateur
-     */
     @PUT("/api/v1/users/status")
     fun updateUserStatus(
         @Header("Authorization") token: String,
         @Body statusUpdateRequest: StatusUpdateRequest
     ): Call<StatusResponse>
 
-    /**
-     * Met à jour le profil de l'utilisateur (nom d'utilisateur, email)
-     */
     @PUT("/api/v1/users/profile")
     fun updateUserProfile(
         @Header("Authorization") token: String,
         @Body profileUpdateRequest: ProfileUpdateRequest
     ): Call<ProfileUpdateResponse>
 
-    /**
-     * Met à jour le mot de passe de l'utilisateur
-     */
     @PUT("/api/v1/users/profile/password")
     fun updateUserPassword(
         @Header("Authorization") token: String,
         @Body passwordUpdateRequest: PasswordUpdateRequest
     ): Call<PasswordUpdateResponse>
 
-    /**
-     * Met à jour la photo de profil de l'utilisateur
-     */
     @Multipart
     @PUT("/api/v1/users/profile/picture")
     fun updateProfilePicture(
         @Header("Authorization") token: String,
         @Part profilePicture: MultipartBody.Part
     ): Call<PictureUpdateResponse>
-
 
     @DELETE("/api/v1/users/profile")
     fun deleteUserProfile(
@@ -195,6 +183,7 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Query("q") searchQuery: String
     ): Call<UserSearchResponse>
+
     @GET("/api/v1/messages/private")
     fun getAllPrivateMessages(
         @Header("Authorization") token: String
@@ -327,7 +316,6 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Call<PrivateMessagesResponse>
 
-
     @GET("/api/v1/conversations/{id}/messages")
     fun getConversationMessages(
         @Header("Authorization") token: String,
@@ -421,7 +409,6 @@ interface ApiService {
         @Path("id") conversationId: String
     ): Call<ConversationDetailsResponse>
 
-    // Créer une conversation
     @POST("/api/v1/conversations")
     fun createConversation(
         @Header("Authorization") token: String,
@@ -433,4 +420,3 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Call<PrivateMessagesResponse>
 }
-
