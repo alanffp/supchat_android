@@ -205,59 +205,6 @@
         </LinearLayout>
 
         <!-- Barre de statut utilisateur (bas) -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="#292b2f"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="16dp">
-            
-            <!-- Avatar utilisateur -->
-            <ImageView
-                android:id="@+id/user_avatar"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_menu_myplaces"
-                android:background="#7289da"
-                android:layout_marginEnd="8dp" />
-            
-            <!-- Info utilisateur -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-                
-                <TextView
-                    android:id="@+id/username_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Nom d'utilisateur"
-                    android:textColor="#ffffff"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-                
-                <TextView
-                    android:id="@+id/status_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="En ligne"
-                    android:textColor="#43b581"
-                    android:textSize="12sp" />
-            </LinearLayout>
-            
-            <!-- Boutons de statut -->
-            <ImageButton
-                android:id="@+id/settings_button"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Paramètres"
-                android:tint="#b9bbbe"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
     </LinearLayout>
 
     <!-- DRAWER DE DROITE (Menu) -->

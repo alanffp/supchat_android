@@ -15,13 +15,16 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.example.supchat.R
 import com.example.supchat.api.ApiClient
@@ -33,6 +36,8 @@ import com.example.supchat.models.response.PictureUpdateResponse
 import com.example.supchat.models.response.ThemeResponse
 import com.example.supchat.models.response.UserProfileData
 import com.example.supchat.models.response.UserProfileResponse
+import com.example.supchat.utils.ImageUtils
+import com.example.supchat.utils.ProfileImageManager
 import de.hdodenhof.circleimageview.CircleImageView
 import retrofit2.Call
 import retrofit2.Callback
@@ -41,7 +46,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
-
 
 class ProfileFragment : Fragment() {
     private lateinit var profileImage: CircleImageView
@@ -61,10 +65,37 @@ class ProfileFragment : Fragment() {
     private lateinit var changePasswordButton: Button
     private lateinit var deleteAccountButton: Button
 
-    private val statusOptions =
-        arrayOf("en ligne", "absent", "occupé", "ne pas déranger", "invisible")
+    // ✅ CORRECTION: Ajout du ProgressBar manquant
+    private var progressBar: ProgressBar? = null
+
+    private val statusOptions = arrayOf("en ligne", "absent", "occupé", "ne pas déranger", "invisible")
     private var selectedImageUri: Uri? = null
     private val PICK_IMAGE_REQUEST = 1
+
+    // ✅ CORRECTION: Déclaration du launcher pour la nouvelle API
+    private val imagePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            selectedImageUri = selectedUri
+
+            // Afficher l'image sélectionnée
+            Glide.with(this)
+                .load(selectedImageUri)
+                .apply(RequestOptions().centerCrop())
+                .into(profileImage)
+
+            // Demander confirmation avant d'envoyer l'image
+            AlertDialog.Builder(requireContext())
+                .setTitle("Mise à jour de la photo de profil")
+                .setMessage("Voulez-vous utiliser cette image comme photo de profil ?")
+                .setPositiveButton("Oui") { _, _ ->
+                    uploadProfilePictureNew(selectedUri)
+                }
+                .setNegativeButton("Non", null)
+                .show()
+        }
+    }
 
     companion object {
         private const val TAG = "ProfileFragment"
@@ -99,6 +130,9 @@ class ProfileFragment : Fragment() {
         changePasswordButton = view.findViewById(R.id.change_password_button)
         deleteAccountButton = view.findViewById(R.id.delete_account_button)
 
+        // ✅ CORRECTION: Initialiser le ProgressBar avec le nouveau layout
+        progressBar = view.findViewById(R.id.progress_bar)
+
         // Configurer le bouton de suppression de compte
         deleteAccountButton.setOnClickListener {
             showDeleteAccountConfirmation()
@@ -117,7 +151,7 @@ class ProfileFragment : Fragment() {
             val selectedTheme = when (themeRadioGroup.checkedRadioButtonId) {
                 R.id.theme_dark -> "sombre"
                 R.id.theme_light -> "clair"
-                else -> "sombre" // Valeur par défaut
+                else -> "sombre"
             }
             updateUserTheme(selectedTheme)
         }
@@ -135,9 +169,9 @@ class ProfileFragment : Fragment() {
             showChangePasswordDialog()
         }
 
-        // Configurer l'image de profil pour permettre la modification
+        // ✅ CORRECTION: Utiliser le nouveau launcher
         profileImage.setOnClickListener {
-            selectProfileImage()
+            imagePickerLauncher.launch("image/*")
         }
 
         // Charger les données du profil
@@ -146,35 +180,38 @@ class ProfileFragment : Fragment() {
         return view
     }
 
-    private fun loadUserProfile() {
-        // Récupérer le token d'authentification
-        val token = requireActivity().getSharedPreferences(
+    // ✅ CORRECTION: Méthode pour récupérer le token
+    private fun getAuthToken(): String {
+        return requireActivity().getSharedPreferences(
             "SupChatPrefs",
             Context.MODE_PRIVATE
-        ).getString("auth_token", "")
+        ).getString("auth_token", "") ?: ""
+    }
 
-        if (token.isNullOrEmpty()) {
+    private fun loadUserProfile() {
+        val token = getAuthToken()
+
+        if (token.isEmpty()) {
             Log.e(TAG, "Token d'authentification manquant")
             Toast.makeText(
                 context,
                 "Session expirée, veuillez vous reconnecter",
                 Toast.LENGTH_SHORT
             ).show()
+            // ✅ CORRECTION: Vérifier que HomeActivity existe
             (activity as? HomeActivity)?.redirectToLogin("Session expirée, veuillez vous reconnecter")
             return
         }
 
-        // Afficher un message de chargement
         showLoadingState()
 
-        // Appeler l'API pour récupérer le profil utilisateur
         ApiClient.getUserProfile(token)
             .enqueue(object : Callback<UserProfileResponse> {
                 override fun onResponse(
                     call: Call<UserProfileResponse>,
                     response: Response<UserProfileResponse>
                 ) {
-                    if (!isAdded) return  // Vérifier si le fragment est toujours attaché
+                    if (!isAdded) return
 
                     if (response.isSuccessful) {
                         val userData = response.body()?.data
@@ -184,7 +221,6 @@ class ProfileFragment : Fragment() {
                             showError("Données utilisateur vides ou invalides")
                         }
                     } else if (response.code() == 401) {
-                        // Gérer l'erreur d'authentification
                         Log.e(TAG, "Erreur 401: Authentification expirée ou invalide")
                         Toast.makeText(
                             context,
@@ -215,19 +251,16 @@ class ProfileFragment : Fragment() {
     }
 
     private fun updateUIWithUserData(userData: UserProfileData) {
-        // Mettre à jour les textes
         usernameText.text = userData.username
         emailText.text = userData.email
         roleText.text = userData.role
         statusText.text = userData.status
 
-        // Mettre à jour le spinner avec le statut actuel
         val statusPosition = statusOptions.indexOf(userData.status)
         if (statusPosition != -1) {
             statusSpinner.setSelection(statusPosition)
         }
 
-        // Mettre à jour l'indicateur de connexion
         if (userData.estConnecte) {
             connectionStatusIndicator.setBackgroundResource(R.drawable.status_indicator_connected)
             connectionStatusText.text = "En ligne"
@@ -236,33 +269,21 @@ class ProfileFragment : Fragment() {
             connectionStatusText.text = "Hors ligne"
         }
 
-        // Mettre à jour la sélection du thème
         when (userData.theme) {
             "clair" -> themeLightRadio.isChecked = true
-            else -> themeDarkRadio.isChecked = true // "sombre" par défaut
+            else -> themeDarkRadio.isChecked = true
         }
 
-        // Charger l'image de profil si disponible
-        if (!userData.profilePicture.isNullOrEmpty()) {
-            val baseUrl = "http://10.0.2.2:3000/uploads/profile/" // Adaptez selon votre API
-            val imageUrl = baseUrl + userData.profilePicture
+        // ✅ UTILISATION DU GESTIONNAIRE D'IMAGES
+        ProfileImageManager.loadProfileImage(profileImage, userData.profilePicture)
+    }
 
-            Glide.with(this)
-                .load(imageUrl)
-                .apply(
-                    RequestOptions()
-                        .placeholder(R.drawable.default_avatar)
-                        .error(R.drawable.default_avatar)
-                )
-                .into(profileImage)
-        } else {
-            // Image par défaut
-            profileImage.setImageResource(R.drawable.default_avatar)
-        }
+    private fun loadProfileImage(profilePicture: String?) {
+        // Cette méthode est maintenant simplifiée
+        ProfileImageManager.loadProfileImage(profileImage, profilePicture)
     }
 
     private fun showLoadingState() {
-        // Mettre des placeholders ou un état de chargement
         usernameText.text = "Chargement..."
         emailText.text = "Chargement..."
         roleText.text = "Chargement..."
@@ -271,21 +292,223 @@ class ProfileFragment : Fragment() {
 
     private fun showError(message: String) {
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-        // Afficher un état d'erreur dans l'UI
         usernameText.text = "Non disponible"
         emailText.text = "Non disponible"
         roleText.text = "Non disponible"
         statusText.text = "Non disponible"
     }
 
-    private fun updateUserTheme(theme: String) {
-        // Récupérer le token d'authentification
-        val token = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            Context.MODE_PRIVATE
-        ).getString("auth_token", "")
+    // ✅ CORRECTION: Nouvelle méthode d'upload avec ImageUtils
+    private fun uploadProfilePictureNew(imageUri: Uri) {
+        try {
+            val preparedFile = ImageUtils.prepareImageForUpload(requireContext(), imageUri)
 
-        if (token.isNullOrEmpty()) {
+            if (preparedFile == null) {
+                showError("Erreur lors du traitement de l'image")
+                return
+            }
+
+            if (!ImageUtils.isValidImageFile(preparedFile)) {
+                showError("Format d'image non supporté")
+                preparedFile.delete()
+                return
+            }
+
+            Log.d(TAG, "Upload de l'image: ${preparedFile.name}, taille: ${preparedFile.length()} bytes")
+
+            showLoading(true)
+
+            val token = getAuthToken()
+            if (token.isEmpty()) {
+                showError("Session expirée")
+                return
+            }
+
+            ApiClient.updateProfilePicture(token, preparedFile)
+                .enqueue(object : Callback<PictureUpdateResponse> {
+                    override fun onResponse(
+                        call: Call<PictureUpdateResponse>,
+                        response: Response<PictureUpdateResponse>
+                    ) {
+                        showLoading(false)
+
+                        if (response.isSuccessful) {
+                            val updateResponse = response.body()
+                            if (updateResponse?.success == true) {
+                                showSuccess("Photo de profil mise à jour")
+
+                                // ✅ SOLUTION 1: Utiliser l'URL retournée par l'API
+                                val imageUrl = updateResponse.data?.profilePictureUrl
+                                    ?: updateResponse.data?.profilePictureUrlAlt
+                                imageUrl?.let { newUrl ->
+                                    ProfileImageManager.loadFromUrl(profileImage, newUrl)
+                                }
+
+                                // ✅ SOLUTION 2: Forcer le rechargement après un court délai
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    if (isAdded) {
+                                        loadUserProfile()
+                                    }
+                                }, 500) // Délai réduit à 500ms
+                            } else {
+                                showError(updateResponse?.message ?: "Erreur lors de la mise à jour")
+                            }
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e(TAG, "Erreur ${response.code()}: $errorBody")
+
+                            val errorMessage = when (response.code()) {
+                                400 -> "Format d'image invalide ou fichier corrompu"
+                                413 -> "Fichier trop volumineux (max 5MB)"
+                                415 -> "Type de fichier non supporté"
+                                else -> "Erreur lors de l'upload (${response.code()})"
+                            }
+
+                            showError(errorMessage)
+                        }
+
+                        preparedFile.delete()
+                    }
+
+                    override fun onFailure(call: Call<PictureUpdateResponse>, t: Throwable) {
+                        showLoading(false)
+                        Log.e(TAG, "Erreur réseau", t)
+                        showError("Erreur de connexion: ${t.message}")
+                        preparedFile.delete()
+                    }
+                })
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de l'upload", e)
+            showError("Erreur: ${e.message}")
+            showLoading(false)
+        }
+    }
+
+    // ✅ SUPPRIMÉE: loadProfileImageFromUrl - remplacée par ProfileImageManager
+
+    private fun showLoading(show: Boolean) {
+        // Option 1: Utiliser le ProgressBar si présent dans le layout
+        progressBar?.visibility = if (show) View.VISIBLE else View.GONE
+
+        // Option 2: Désactiver les boutons pendant le chargement
+        editProfileButton.isEnabled = !show
+        changePasswordButton.isEnabled = !show
+        deleteAccountButton.isEnabled = !show
+        updateStatusButton.isEnabled = !show
+        saveThemeButton.isEnabled = !show
+    }
+
+    private fun showSuccess(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+    // ✅ CORRECTION: Garder l'ancienne méthode pour compatibilité
+    private fun uploadProfileImage() {
+        if (selectedImageUri == null) return
+
+        val token = getAuthToken()
+        if (token.isEmpty()) {
+            Toast.makeText(
+                context,
+                "Session expirée, veuillez vous reconnecter",
+                Toast.LENGTH_SHORT
+            ).show()
+            (activity as? HomeActivity)?.redirectToLogin("Session expirée, veuillez vous reconnecter")
+            return
+        }
+
+        val progressDialog = ProgressDialog(context)
+        progressDialog.setMessage("Mise à jour de la photo de profil...")
+        progressDialog.setCancelable(false)
+        progressDialog.show()
+
+        try {
+            val inputStream = requireContext().contentResolver.openInputStream(selectedImageUri!!)
+            val file = File(requireContext().cacheDir, "profile_image.jpg")
+            val outputStream = FileOutputStream(file)
+            inputStream?.copyTo(outputStream)
+            inputStream?.close()
+            outputStream.close()
+
+            ApiClient.updateProfilePicture(token, file)
+                .enqueue(object : Callback<PictureUpdateResponse> {
+                    override fun onResponse(
+                        call: Call<PictureUpdateResponse>,
+                        response: Response<PictureUpdateResponse>
+                    ) {
+                        progressDialog.dismiss()
+
+                        if (!isAdded) return
+
+                        if (response.isSuccessful) {
+                            val updateResponse = response.body()
+                            if (updateResponse?.success == true) {
+                                Toast.makeText(
+                                    context,
+                                    "Photo de profil mise à jour avec succès",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                // ✅ CORRECTION: Utiliser le gestionnaire d'images
+                                val imageUrl = updateResponse.data?.profilePictureUrl
+                                    ?: updateResponse.data?.profilePictureUrlAlt
+                                imageUrl?.let { newUrl ->
+                                    ProfileImageManager.loadFromUrl(profileImage, newUrl)
+                                }
+
+                                // Recharger le profil après un délai
+                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                    if (isAdded) {
+                                        loadUserProfile()
+                                    }
+                                }, 500)
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    updateResponse?.message ?: "Erreur lors de la mise à jour",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e(TAG, "Erreur API: ${response.code()}, message: $errorBody")
+                            Toast.makeText(
+                                context,
+                                "Erreur lors de la mise à jour de la photo: ${response.code()}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<PictureUpdateResponse>, t: Throwable) {
+                        progressDialog.dismiss()
+                        if (!isAdded) return
+
+                        Log.e(TAG, "Échec de l'appel API", t)
+                        Toast.makeText(
+                            context,
+                            "Erreur réseau: ${t.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                })
+        } catch (e: Exception) {
+            progressDialog.dismiss()
+            Log.e(TAG, "Erreur lors de la préparation du fichier", e)
+            Toast.makeText(
+                context,
+                "Erreur lors de la préparation de l'image: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    // ✅ CORRECTION: Supprimer les méthodes en double et garder les versions complètes
+    private fun updateUserTheme(theme: String) {
+        val token = getAuthToken()
+
+        if (token.isEmpty()) {
             Toast.makeText(
                 context,
                 "Session expirée, veuillez vous reconnecter",
@@ -300,7 +523,6 @@ class ProfileFragment : Fragment() {
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        // Appeler l'API client pour mettre à jour le thème
         ApiClient.updateUserTheme(token, theme)
             .enqueue(object : Callback<ThemeResponse> {
                 override fun onResponse(
@@ -317,9 +539,6 @@ class ProfileFragment : Fragment() {
                             "Thème mis à jour avec succès",
                             Toast.LENGTH_SHORT
                         ).show()
-
-                        // Vous pourriez également appliquer le thème ici
-                        // applyTheme(theme)
                     } else {
                         val errorBody = response.errorBody()?.string()
                         Log.e(TAG, "Erreur API: ${response.code()}, message: $errorBody")
@@ -346,13 +565,9 @@ class ProfileFragment : Fragment() {
     }
 
     private fun updateUserStatus(status: String) {
-        // Récupérer le token d'authentification
-        val token = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            Context.MODE_PRIVATE
-        ).getString("auth_token", "")
+        val token = getAuthToken()
 
-        if (token.isNullOrEmpty()) {
+        if (token.isEmpty()) {
             Toast.makeText(
                 context,
                 "Session expirée, veuillez vous reconnecter",
@@ -367,7 +582,6 @@ class ProfileFragment : Fragment() {
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        // Appeler l'API client pour mettre à jour le statut
         ApiClient.updateUserStatus(token, status)
             .enqueue(object : Callback<StatusResponse> {
                 override fun onResponse(
@@ -379,7 +593,6 @@ class ProfileFragment : Fragment() {
                     if (!isAdded) return
 
                     if (response.isSuccessful) {
-                        // Mettre à jour l'UI
                         statusText.text = status
                         Toast.makeText(
                             context,
@@ -416,7 +629,6 @@ class ProfileFragment : Fragment() {
         val usernameEditText = dialogView.findViewById<EditText>(R.id.edit_username)
         val emailEditText = dialogView.findViewById<EditText>(R.id.edit_email)
 
-        // Pré-remplir avec les valeurs actuelles
         usernameEditText.setText(usernameText.text)
         emailEditText.setText(emailText.text)
 
@@ -475,13 +687,9 @@ class ProfileFragment : Fragment() {
     }
 
     private fun updateUserProfile(username: String, email: String) {
-        // Récupérer le token d'authentification
-        val token = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            Context.MODE_PRIVATE
-        ).getString("auth_token", "")
+        val token = getAuthToken()
 
-        if (token.isNullOrEmpty()) {
+        if (token.isEmpty()) {
             Toast.makeText(
                 context,
                 "Session expirée, veuillez vous reconnecter",
@@ -496,7 +704,6 @@ class ProfileFragment : Fragment() {
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        // Appeler l'API client pour mettre à jour le profil
         ApiClient.updateUserProfile(token, username, email)
             .enqueue(object : Callback<ProfileUpdateResponse> {
                 override fun onResponse(
@@ -508,7 +715,6 @@ class ProfileFragment : Fragment() {
                     if (!isAdded) return
 
                     if (response.isSuccessful) {
-                        // Mettre à jour l'UI
                         usernameText.text = username
                         emailText.text = email
                         Toast.makeText(
@@ -546,13 +752,9 @@ class ProfileFragment : Fragment() {
         newPassword: String,
         confirmPassword: String
     ) {
-        // Récupérer le token d'authentification
-        val token = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            Context.MODE_PRIVATE
-        ).getString("auth_token", "")
+        val token = getAuthToken()
 
-        if (token.isNullOrEmpty()) {
+        if (token.isEmpty()) {
             Toast.makeText(
                 context,
                 "Session expirée, veuillez vous reconnecter",
@@ -567,7 +769,6 @@ class ProfileFragment : Fragment() {
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        // Appeler l'API client pour mettre à jour le mot de passe
         ApiClient.updateUserPassword(token, currentPassword, newPassword, confirmPassword)
             .enqueue(object : Callback<PasswordUpdateResponse> {
                 override fun onResponse(
@@ -609,24 +810,20 @@ class ProfileFragment : Fragment() {
             })
     }
 
-    private fun selectProfileImage() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        startActivityForResult(intent, PICK_IMAGE_REQUEST)
-    }
+    // ✅ CORRECTION: Supprimer selectProfileImage() car on utilise le launcher maintenant
 
+    // ✅ CORRECTION: Garder onActivityResult pour compatibilité si besoin
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
             selectedImageUri = data.data
 
-            // Afficher l'image sélectionnée
             Glide.with(this)
                 .load(selectedImageUri)
                 .apply(RequestOptions().centerCrop())
                 .into(profileImage)
 
-            // Demander confirmation avant d'envoyer l'image
             AlertDialog.Builder(requireContext())
                 .setTitle("Mise à jour de la photo de profil")
                 .setMessage("Voulez-vous utiliser cette image comme photo de profil ?")
@@ -637,91 +834,6 @@ class ProfileFragment : Fragment() {
                 .show()
         }
     }
-
-    private fun uploadProfileImage() {
-        if (selectedImageUri == null) return
-
-        // Récupérer le token d'authentification
-        val token = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            Context.MODE_PRIVATE
-        ).getString("auth_token", "")
-
-        if (token.isNullOrEmpty()) {
-            Toast.makeText(
-                context,
-                "Session expirée, veuillez vous reconnecter",
-                Toast.LENGTH_SHORT
-            ).show()
-            (activity as? HomeActivity)?.redirectToLogin("Session expirée, veuillez vous reconnecter")
-            return
-        }
-
-        val progressDialog = ProgressDialog(context)
-        progressDialog.setMessage("Mise à jour de la photo de profil...")
-        progressDialog.setCancelable(false)
-        progressDialog.show()
-
-        try {
-            // Convertir l'URI en fichier
-            val inputStream = requireContext().contentResolver.openInputStream(selectedImageUri!!)
-            val file = File(requireContext().cacheDir, "profile_image.jpg")
-            val outputStream = FileOutputStream(file)
-            inputStream?.copyTo(outputStream)
-            inputStream?.close()
-            outputStream.close()
-
-            // Envoyer le fichier
-            ApiClient.updateProfilePicture(token, file)
-                .enqueue(object : Callback<PictureUpdateResponse> {
-                    override fun onResponse(
-                        call: Call<PictureUpdateResponse>,
-                        response: Response<PictureUpdateResponse>
-                    ) {
-                        progressDialog.dismiss()
-
-                        if (!isAdded) return
-
-                        if (response.isSuccessful) {
-                            Toast.makeText(
-                                context,
-                                "Photo de profil mise à jour avec succès",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            val errorBody = response.errorBody()?.string()
-                            Log.e(TAG, "Erreur API: ${response.code()}, message: $errorBody")
-                            Toast.makeText(
-                                context,
-                                "Erreur lors de la mise à jour de la photo: ${response.code()}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-
-                    override fun onFailure(call: Call<PictureUpdateResponse>, t: Throwable) {
-                        progressDialog.dismiss()
-                        if (!isAdded) return
-
-                        Log.e(TAG, "Échec de l'appel API", t)
-                        Toast.makeText(
-                            context,
-                            "Erreur réseau: ${t.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                })
-        } catch (e: Exception) {
-            progressDialog.dismiss()
-            Log.e(TAG, "Erreur lors de la préparation du fichier", e)
-            Toast.makeText(
-                context,
-                "Erreur lors de la préparation de l'image: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
 
     private fun showDeleteAccountConfirmation() {
         val view = LayoutInflater.from(context).inflate(R.layout.dialog_confirm_delete_account, null)
@@ -745,11 +857,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun deleteUserAccount(password: String) {
-        // Obtenir le token
-        val token = requireActivity().getSharedPreferences(
-            "SupChatPrefs",
-            android.content.Context.MODE_PRIVATE
-        ).getString("auth_token", "") ?: ""
+        val token = getAuthToken()
 
         if (token.isEmpty()) {
             Toast.makeText(
@@ -761,16 +869,13 @@ class ProfileFragment : Fragment() {
             return
         }
 
-        // Afficher un dialogue de progression
         val progressDialog = ProgressDialog(context)
         progressDialog.setMessage("Suppression du compte en cours...")
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        // Appel API pour supprimer le compte avec le mot de passe
         ApiClient.deleteUserProfile(token, password)
             .enqueue(object : Callback<AccountDeleteResponse> {
-                // Reste du callback inchangé
                 override fun onResponse(
                     call: Call<AccountDeleteResponse>,
                     response: Response<AccountDeleteResponse>
@@ -787,7 +892,6 @@ class ProfileFragment : Fragment() {
                             Toast.LENGTH_LONG
                         ).show()
 
-                        // Rediriger vers l'écran de connexion
                         (activity as? HomeActivity)?.redirectToLogin("Compte supprimé avec succès")
                     } else if (response.code() == 401) {
                         Log.e(TAG, "Erreur 401: Authentification expirée ou invalide")
@@ -799,7 +903,6 @@ class ProfileFragment : Fragment() {
                             "Erreur de suppression du compte: ${response.code()}, $errorBody"
                         )
 
-                        // Message d'erreur spécifique si le mot de passe est incorrect
                         val errorMessage = if (response.code() == 403) {
                             "Mot de passe incorrect. Veuillez réessayer."
                         } else {
@@ -811,13 +914,12 @@ class ProfileFragment : Fragment() {
                 }
 
                 override fun onFailure(call: Call<AccountDeleteResponse>, t: Throwable) {
-                    // Callback d'échec inchangé
                     progressDialog.dismiss()
                     Log.e(TAG, "Échec de l'appel API pour la suppression du compte", t)
 
                     val errorMessage = when (t) {
-                        is java.net.UnknownHostException -> "Erreur de connexion: Vérifiez votre connexion Internet"
-                        is java.net.SocketTimeoutException -> "Délai d'attente dépassé pour la connexion"
+                        is UnknownHostException -> "Erreur de connexion: Vérifiez votre connexion Internet"
+                        is SocketTimeoutException -> "Délai d'attente dépassé pour la connexion"
                         else -> "Erreur réseau: ${t.message}"
                     }
 

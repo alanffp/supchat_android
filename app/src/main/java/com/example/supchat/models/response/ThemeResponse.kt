@@ -3,7 +3,7 @@ package com.example.supchat.models.response
 import com.google.gson.annotations.SerializedName
 
 /**
- * Classe pour les réponses de mise à jour du thème
+ * Réponse à la mise à jour du thème
  */
 data class ThemeResponse(
     @SerializedName("success")
@@ -20,9 +20,12 @@ data class ThemeResponse(
 )
 
 /**
- * Données de thème incluses dans la réponse
+ * Données de thème dans la réponse
  */
 data class ThemeData(
     @SerializedName("theme")
-    val theme: String = "sombre"
+    val theme: String? = null,
+
+    @SerializedName("updated_at")
+    val updatedAt: String? = null
 )

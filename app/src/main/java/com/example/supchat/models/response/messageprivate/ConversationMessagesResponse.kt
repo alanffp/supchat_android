@@ -38,13 +38,6 @@ data class MessageLecture(
     @SerializedName("dateLecture") val dateLecture: String
 )
 
-data class MessageFichier(
-    @SerializedName("nom") val nom: String = "",
-    @SerializedName("type") val type: String = "",
-    @SerializedName("url") val url: String = "",
-    @SerializedName("urlPreview") val urlPreview: String? = null,
-    @SerializedName("taille") val taille: Long = 0
-)
 
 data class MessageReaction(
     @SerializedName("utilisateur") val utilisateur: String = "",

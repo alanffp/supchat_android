@@ -419,4 +419,22 @@ interface ApiService {
     fun getAllConversations(
         @Header("Authorization") token: String
     ): Call<PrivateMessagesResponse>
+
+    @Multipart
+    @POST("/api/v1/fichiers/canal/{workspaceId}/{canalId}")
+    fun uploadFileToCanal(
+        @Header("Authorization") token: String,
+        @Path("workspaceId") workspaceId: String,
+        @Path("canalId") canalId: String,
+        @Part fichier: MultipartBody.Part,
+        @Part("contenu") contenu: RequestBody? = null,
+        @Part("messageId") messageId: RequestBody? = null
+    ): Call<MessagesResponse>
+
+    @GET("/api/v1/fichiers/canal/{workspaceId}/{canalId}")
+    fun getCanalFiles(
+        @Header("Authorization") token: String,
+        @Path("workspaceId") workspaceId: String,
+        @Path("canalId") canalId: String
+    ): Call<MessagesResponse>
 }

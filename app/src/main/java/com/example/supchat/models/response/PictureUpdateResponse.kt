@@ -16,13 +16,28 @@ data class PictureUpdateResponse(
     val error: String? = null,
 
     @SerializedName("data")
-    val data: PictureData? = null
+    val data: PictureUpdateData? = null
 )
 
 /**
  * Données de la photo dans la réponse
  */
-data class PictureData(
+data class PictureUpdateData(
     @SerializedName("profilePicture")
-    val profilePicture: String = ""
+    val profilePicture: String? = null,
+
+    @SerializedName("profilePictureUrl")
+    val profilePictureUrl: String? = null,
+
+    @SerializedName("profile_picture_url")
+    val profilePictureUrlAlt: String? = null,
+
+    @SerializedName("url")
+    val url: String? = null,
+
+    @SerializedName("filename")
+    val filename: String? = null,
+
+    @SerializedName("updated_at")
+    val updatedAt: String? = null
 )

@@ -1,97 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Créez ce fichier : res/layout/item_participant.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="?attr/selectableItemBackground"
-    android:padding="8dp">
+    android:clickable="true"
+    android:focusable="true"
+    android:backgroundTint="#2f3136">
 
     <!-- Layout principal du participant -->
     <LinearLayout
         android:id="@+id/participant_main_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:gravity="center_vertical">
 
-        <!-- Avatar -->
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/participant_avatar"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/default_avatar" />
+            android:src="@drawable/default_avatar"
+            android:layout_marginEnd="12dp" />
 
-        <!-- Info participant -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="12dp">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/participant_username"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Nom utilisateur"
-                android:textColor="@android:color/white"
-                android:textSize="16sp"
+                android:text="Nom du participant"
+                android:textColor="#ffffff"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/participant_role"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Participant"
-                android:textColor="#CCFFFFFF"
+                android:text="Membre"
+                android:textColor="#b9bbbe"
                 android:textSize="12sp" />
 
         </LinearLayout>
 
-        <!-- Statut (Créateur/Vous) -->
         <TextView
             android:id="@+id/participant_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Vous"
-            android:textColor="@android:color/white"
-            android:textSize="11sp"
-            android:padding="4dp"
-            android:background="@android:color/holo_blue_dark"
-            android:visibility="gone" />
+            android:text="En ligne"
+            android:textColor="#ff6b35"
+            android:textSize="12sp"
+            android:layout_marginEnd="8dp" />
 
-        <!-- Icône d'expansion -->
         <ImageView
             android:id="@+id/participant_expand_icon"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@android:drawable/arrow_down_float"
-            android:tint="@android:color/white"
-            android:layout_marginStart="8dp"
+            android:tint="#b9bbbe"
             android:visibility="gone" />
 
     </LinearLayout>
 
-    <!-- Actions étendues -->
+    <!-- Layout des actions (masqué par défaut) -->
     <LinearLayout
         android:id="@+id/participant_actions_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="#40444b"
         android:gravity="end"
-        android:padding="8dp"
         android:visibility="gone">
 
         <Button
             android:id="@+id/remove_participant_button"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:text="Supprimer"
+            android:layout_height="36dp"
+            android:text="Retirer"
             android:textSize="12sp"
-            android:backgroundTint="#E74C3C"
-            android:textColor="@android:color/white"
+            android:backgroundTint="#f04747"
+            android:textColor="#ffffff"
             android:paddingHorizontal="16dp" />
 
     </LinearLayout>

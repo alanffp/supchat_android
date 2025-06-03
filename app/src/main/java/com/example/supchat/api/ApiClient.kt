@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
     private const val TAG = "ApiClient"
-    private const val BASE_URL = "http://10.0.2.2:3000/"
+    private const val BASE_URL = "http://10.0.2.2:3000"
 
     val instance: ApiService by lazy {
         // ✅ CORRECTION : Enregistrer TOUS les deserializers
@@ -415,9 +415,36 @@ object ApiClient {
     }
 
     fun updateProfilePicture(token: String, imageFile: File): Call<PictureUpdateResponse> {
-        val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-        val imagePart =
-            MultipartBody.Part.createFormData("profilePicture", imageFile.name, requestFile)
+        // Validation du fichier
+        if (!imageFile.exists()) {
+            throw IllegalArgumentException("Le fichier n'existe pas")
+        }
+
+        if (imageFile.length() == 0L) {
+            throw IllegalArgumentException("Le fichier est vide")
+        }
+
+        // Taille maximale: 5MB
+        if (imageFile.length() > 5 * 1024 * 1024) {
+            throw IllegalArgumentException("Le fichier est trop volumineux (max 5MB)")
+        }
+
+        // Déterminer le type MIME basé sur l'extension
+        val mimeType = when (imageFile.extension.lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            else -> "image/*"
+        }
+
+        val requestFile = imageFile.asRequestBody(mimeType.toMediaTypeOrNull())
+        val imagePart = MultipartBody.Part.createFormData(
+            "profilePicture", // Nom du champ attendu par l'API
+            imageFile.name,
+            requestFile
+        )
+
         return instance.updateProfilePicture("Bearer $token", imagePart)
     }
 
@@ -446,6 +473,7 @@ object ApiClient {
         return instance.markAllNotificationsAsRead("Bearer $token")
 
     }
+
     fun uploadFileToConversation(
         token: String,
         conversationId: String,
@@ -473,6 +501,7 @@ object ApiClient {
             messageIdPart
         )
     }
+
     fun getConversationDetails(
         token: String,
         conversationId: String
@@ -503,6 +532,7 @@ object ApiClient {
     ): Call<ConversationDetailsResponse> {
         return instance.leaveConversation("Bearer $token", conversationId)
     }
+
     fun createConversation(
         token: String,
         nom: String? = null,
@@ -531,5 +561,43 @@ object ApiClient {
     fun microsoftLoginCallback(code: String, state: String? = null): Call<LoginResponse> {
         val request = OAuthCallbackRequest(code, state)
         return instance.microsoftLoginCallback(request)
+    }
+
+    // === FICHIERS POUR CANAUX ===
+    fun uploadFileToCanal(
+        token: String,
+        workspaceId: String,
+        canalId: String,
+        file: File,
+        content: String? = null,
+        messageId: String? = null
+    ): Call<MessagesResponse> {
+        val requestFile = file.asRequestBody("*/*".toMediaTypeOrNull())
+        val filePart = MultipartBody.Part.createFormData("fichier", file.name, requestFile)
+
+        val contentPart = content?.let {
+            RequestBody.create("text/plain".toMediaTypeOrNull(), it)
+        }
+
+        val messageIdPart = messageId?.let {
+            RequestBody.create("text/plain".toMediaTypeOrNull(), it)
+        }
+
+        return instance.uploadFileToCanal(
+            "Bearer $token",
+            workspaceId,
+            canalId,
+            filePart,
+            contentPart,
+            messageIdPart
+        )
+    }
+
+    fun getCanalFiles(
+        token: String,
+        workspaceId: String,
+        canalId: String
+    ): Call<MessagesResponse> {
+        return instance.getCanalFiles("Bearer $token", workspaceId, canalId)
     }
 }

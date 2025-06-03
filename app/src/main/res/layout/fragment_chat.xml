@@ -89,7 +89,7 @@
         android:id="@+id/reply_info_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/message_input_container"
+        android:layout_above="@+id/input_container"
         android:orientation="horizontal"
         android:padding="16dp"
         android:background="@drawable/reply_bar_background"
@@ -145,71 +145,162 @@
             android:tint="#888888" />
     </LinearLayout>
 
-    <!-- Zone de saisie de message moderne -->
+    <!-- ✅ NOUVEAU: Container principal pour input + options -->
     <LinearLayout
-        android:id="@+id/message_input_container"
+        android:id="@+id/input_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:padding="16dp"
-        android:background="@drawable/input_container_background"
-        android:elevation="4dp"
-        android:gravity="bottom">
+        android:background="#2f3136"
+        android:elevation="4dp">
 
-        <!-- Bouton d'attachement -->
-        <ImageButton
-            android:id="@+id/attach_button"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:src="@android:drawable/ic_menu_add"
-            android:background="@drawable/circle_button_accent"
-            android:contentDescription="Joindre un fichier"
-            android:tint="#ffffff"
-            android:layout_marginEnd="8dp"
-            android:layout_gravity="bottom" />
-        
-        <!-- Zone de saisie avec style moderne -->
+        <!-- Zone de saisie de message moderne -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:id="@+id/message_input_container"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="@drawable/modern_message_input_background"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="12dp"
-            android:layout_marginEnd="8dp"
-            android:minHeight="44dp"
-            android:gravity="center_vertical">
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="bottom">
 
-            <EditText
-                android:id="@+id/message_input"
-                android:layout_width="match_parent"
+            <!-- Bouton d'attachement -->
+            <ImageButton
+                android:id="@+id/attach_button"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@android:drawable/ic_menu_add"
+                android:background="@drawable/circle_button_accent"
+                android:contentDescription="Joindre un fichier"
+                android:tint="#ffffff"
+                android:layout_marginEnd="8dp"
+                android:layout_gravity="bottom" />
+            
+            <!-- Zone de saisie avec style moderne -->
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:hint="Tapez votre message..."
-                android:textColorHint="#666666"
-                android:textColor="#ffffff"
-                android:textSize="16sp"
-                android:background="@android:color/transparent"
-                android:imeOptions="actionSend"
-                android:inputType="textMultiLine|textCapSentences"
-                android:maxLines="4"
-                android:minLines="1"
-                android:padding="0dp"
-                android:fontFamily="sans-serif" />
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@drawable/modern_message_input_background"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp"
+                android:layout_marginEnd="8dp"
+                android:minHeight="44dp"
+                android:gravity="center_vertical">
+
+                <EditText
+                    android:id="@+id/message_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Tapez votre message..."
+                    android:textColorHint="#666666"
+                    android:textColor="#ffffff"
+                    android:textSize="16sp"
+                    android:background="@android:color/transparent"
+                    android:imeOptions="actionSend"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="4"
+                    android:minLines="1"
+                    android:padding="0dp"
+                    android:fontFamily="sans-serif" />
+            </LinearLayout>
+
+            <!-- Bouton d'envoi avec animation -->
+            <ImageButton
+                android:id="@+id/send_button"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:src="@android:drawable/ic_menu_send"
+                android:background="@drawable/send_button_background"
+                android:contentDescription="Envoyer"
+                android:tint="#ffffff"
+                android:layout_gravity="bottom"
+                android:elevation="2dp" />
         </LinearLayout>
 
-        <!-- Bouton d'envoi avec animation -->
-        <ImageButton
-            android:id="@+id/send_button"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:src="@android:drawable/ic_menu_send"
-            android:background="@drawable/send_button_background"
-            android:contentDescription="Envoyer"
-            android:tint="#ffffff"
-            android:layout_gravity="bottom"
-            android:elevation="2dp" />
+        <!-- ✅ NOUVEAU: Zone d'options d'attachement -->
+        <LinearLayout
+            android:id="@+id/attachment_options_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone"
+            android:background="#40444b">
+
+            <!-- Boutons principaux -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="start"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/option_file"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="📎 Fichier"
+                    android:textSize="12sp"
+                    android:backgroundTint="#7289da"
+                    android:textColor="#ffffff"
+                    android:layout_marginEnd="8dp"
+                    android:paddingHorizontal="16dp" />
+
+                <Button
+                    android:id="@+id/option_poll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="📊 Sondage"
+                    android:textSize="12sp"
+                    android:backgroundTint="#ff6b35"
+                    android:textColor="#ffffff"
+                    android:paddingHorizontal="16dp" />
+
+            </LinearLayout>
+
+            <!-- Boutons pour photos/média -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="start">
+
+                <ImageButton
+                    android:id="@+id/option_camera"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_menu_camera"
+                    android:background="@drawable/circle_button_background"
+                    android:backgroundTint="#f04747"
+                    android:contentDescription="Appareil photo"
+                    android:layout_marginEnd="8dp" />
+
+                <ImageButton
+                    android:id="@+id/option_image"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    android:background="@drawable/circle_button_background"
+                    android:backgroundTint="#ff6b35"
+                    android:contentDescription="Galerie"
+                    android:layout_marginEnd="8dp" />
+
+                <ImageButton
+                    android:id="@+id/option_video"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@android:drawable/ic_media_play"
+                    android:background="@drawable/circle_button_background"
+                    android:backgroundTint="#43b581"
+                    android:contentDescription="Vidéo"
+                    android:layout_marginEnd="8dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
     </LinearLayout>
 
     <!-- Conteneur pour les messages legacy (masqué) -->

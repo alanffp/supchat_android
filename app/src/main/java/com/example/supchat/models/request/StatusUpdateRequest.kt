@@ -10,6 +10,9 @@ data class StatusUpdateRequest(
     val status: String
 )
 
+/**
+ * Réponse à la mise à jour du statut
+ */
 data class StatusResponse(
     @SerializedName("success")
     val success: Boolean = false,
@@ -29,5 +32,8 @@ data class StatusResponse(
  */
 data class StatusData(
     @SerializedName("status")
-    val status: String = ""
+    val status: String? = null,
+
+    @SerializedName("updated_at")
+    val updatedAt: String? = null
 )

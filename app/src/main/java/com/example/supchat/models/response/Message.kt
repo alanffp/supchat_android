@@ -1,10 +1,11 @@
 package com.example.supchat.models.response
 
+import com.example.supchat.models.response.messageprivate.MessageFichier
 import com.google.gson.annotations.SerializedName
 
 /**
  * Modèle représentant un message dans la réponse API
- * Amélioré pour mieux gérer les réactions et les réponses
+ * Amélioré pour mieux gérer les réactions, les réponses et les fichiers
  */
 data class Message(
     @SerializedName("_id") val id: String,
@@ -15,7 +16,8 @@ data class Message(
     val reactions: Map<String, Int>? = null,
     val reponses: List<Message>? = null,
     val estReponse: Boolean = false,
-    val messageParent: String? = null
+    val messageParent: String? = null,
+    @SerializedName("fichiers") val fichiers: List<MessageFichier> = emptyList() // ✅ AJOUT pour les fichiers
 ) {
     /**
      * Récupère le nom de l'auteur du message pour l'affichage
@@ -65,6 +67,7 @@ data class Message(
         android.util.Log.d("Message", "hasReaction $emoji pour message $id: $has")
         return has
     }
+
     /**
      * Récupérer le nombre total de réactions
      */
@@ -92,6 +95,7 @@ data class Message(
     fun getDebugSummary(): String {
         return "Message(id=$id, auteur=${getNomAuteur()}, hasReactions=${hasReactions()}, totalReactions=${getTotalReactions()})"
     }
+
     /**
      * Vérifier si ce message est une réponse
      */
@@ -106,4 +110,20 @@ data class Message(
      * Récupérer le nombre de réponses
      */
     fun getReplyCount(): Int = reponses?.size ?: 0
+
+    // ✅ NOUVELLES MÉTHODES pour les fichiers
+    /**
+     * Vérifier si ce message a des fichiers
+     */
+    fun hasFiles(): Boolean = fichiers.isNotEmpty()
+
+    /**
+     * Récupérer le nombre de fichiers
+     */
+    fun getFileCount(): Int = fichiers.size
+
+    /**
+     * Récupérer la liste des fichiers
+     */
+    fun getFiles(): List<MessageFichier> = fichiers
 }

@@ -2,25 +2,27 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimary">
+    android:background="#1a1a1a">
 
     <!-- Barre supérieure avec le nom de l'utilisateur et bouton retour -->
     <LinearLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/colorPrimaryDark"
+        android:background="@drawable/top_bar_gradient"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:elevation="8dp">
 
         <ImageButton
             android:id="@+id/back_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/circle_button_transparent"
             android:contentDescription="Retour"
-            android:src="@android:drawable/ic_menu_close_clear_cancel" />
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="#ffffff" />
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/user_profile_image"
@@ -41,7 +43,8 @@
                 android:id="@+id/username_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@android:color/white"
+                android:text="Nom d'utilisateur"
+                android:textColor="#ffffff"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -57,14 +60,14 @@
                     android:layout_width="8dp"
                     android:layout_height="8dp"
                     android:background="@drawable/circle_indicator"
-                    android:backgroundTint="@android:color/holo_red_light" />
+                    android:backgroundTint="#f04747" />
 
                 <TextView
                     android:id="@+id/connection_status_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Hors ligne"
-                    android:textColor="#CCFFFFFF"
+                    android:textColor="#b3ffffff"
                     android:textSize="11sp"
                     android:layout_marginStart="4dp" />
 
@@ -72,30 +75,29 @@
 
         </LinearLayout>
 
-        <!-- ✅ NOUVEAU: Bouton menu participants (3 barres) -->
+        <!-- Bouton menu participants -->
         <ImageButton
             android:id="@+id/participants_menu_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:src="@drawable/ic_menu_participants"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/circle_button_transparent"
             android:contentDescription="Gestion des participants"
-            android:tint="@android:color/white"
+            android:tint="#ffffff"
             android:layout_marginEnd="8dp" />
 
     </LinearLayout>
 
-    <!-- ✅ NOUVEAU: Panneau de gestion des participants -->
+    <!-- Panneau de gestion des participants -->
     <LinearLayout
         android:id="@+id/participants_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/top_bar"
         android:orientation="vertical"
-        android:background="#34495E"
+        android:background="#2f3136"
         android:visibility="gone"
-        android:elevation="4dp"
-        android:translationY="-100dp">
+        android:elevation="4dp">
 
         <!-- En-tête du panneau -->
         <LinearLayout
@@ -110,7 +112,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Participants"
-                android:textColor="@android:color/white"
+                android:textColor="#ffffff"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -120,8 +122,8 @@
                 android:layout_height="36dp"
                 android:text="+ Inviter"
                 android:textSize="12sp"
-                android:backgroundTint="#3498DB"
-                android:textColor="@android:color/white"
+                android:backgroundTint="#ff6b35"
+                android:textColor="#ffffff"
                 android:paddingHorizontal="12dp" />
 
         </LinearLayout>
@@ -141,7 +143,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="16dp"
-            android:background="#E74C3C"
+            android:background="#40444b"
             android:gravity="center">
 
             <Button
@@ -150,8 +152,8 @@
                 android:layout_height="36dp"
                 android:text="🚪 Quitter la conversation"
                 android:textSize="12sp"
-                android:backgroundTint="#C0392B"
-                android:textColor="@android:color/white"
+                android:backgroundTint="#f04747"
+                android:textColor="#ffffff"
                 android:paddingHorizontal="16dp" />
 
         </LinearLayout>
@@ -164,7 +166,8 @@
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_centerInParent="true"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:indeterminateTint="#ff6b35" />
 
     <!-- Zone de messages -->
     <androidx.recyclerview.widget.RecyclerView
@@ -173,7 +176,8 @@
         android:layout_height="match_parent"
         android:layout_below="@id/top_bar"
         android:layout_above="@+id/input_container"
-        android:padding="8dp" />
+        android:padding="8dp"
+        android:background="#1a1a1a" />
 
     <!-- Container principal pour input + options -->
     <LinearLayout
@@ -182,7 +186,8 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:background="@color/DarkBlue">
+        android:background="#2f3136"
+        android:elevation="4dp">
 
         <!-- Zone de saisie de message -->
         <LinearLayout
@@ -198,10 +203,10 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:src="@drawable/ic_add"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/circle_button_transparent"
                 android:contentDescription="Options"
                 android:layout_gravity="center_vertical"
-                android:tint="@color/colorAccent" />
+                android:tint="#ff6b35" />
 
             <EditText
                 android:id="@+id/message_input"
@@ -209,8 +214,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:hint="Écrivez un message..."
-                android:textColorHint="#78FFFFFF"
-                android:textColor="@android:color/black"
+                android:textColorHint="#72767d"
+                android:textColor="#ffffff"
                 android:padding="12dp"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/message_input_background"
@@ -223,10 +228,10 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:src="@android:drawable/ic_menu_send"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/send_button_background"
                 android:contentDescription="Envoyer"
                 android:layout_marginStart="8dp"
-                android:tint="@color/colorAccent"
+                android:tint="#ffffff"
                 android:enabled="false" />
 
         </LinearLayout>
@@ -239,7 +244,7 @@
             android:orientation="vertical"
             android:padding="12dp"
             android:visibility="gone"
-            android:background="#2C3E50">
+            android:background="#40444b">
 
             <!-- Boutons principaux -->
             <LinearLayout
@@ -255,8 +260,8 @@
                     android:layout_height="40dp"
                     android:text="📊 Sondage"
                     android:textSize="12sp"
-                    android:backgroundTint="#9B59B6"
-                    android:textColor="@android:color/white"
+                    android:backgroundTint="#ff6b35"
+                    android:textColor="#ffffff"
                     android:layout_marginEnd="8dp"
                     android:paddingHorizontal="16dp" />
 
@@ -266,8 +271,8 @@
                     android:layout_height="40dp"
                     android:text="📎 Fichier"
                     android:textSize="12sp"
-                    android:backgroundTint="#3498DB"
-                    android:textColor="@android:color/white"
+                    android:backgroundTint="#7289da"
+                    android:textColor="#ffffff"
                     android:paddingHorizontal="16dp" />
 
             </LinearLayout>
@@ -285,7 +290,7 @@
                     android:layout_height="48dp"
                     android:src="@android:drawable/ic_menu_camera"
                     android:background="@drawable/circle_button_background"
-                    android:backgroundTint="#E74C3C"
+                    android:backgroundTint="#f04747"
                     android:contentDescription="Appareil photo"
                     android:layout_marginEnd="8dp" />
 
@@ -295,7 +300,7 @@
                     android:layout_height="48dp"
                     android:src="@android:drawable/ic_menu_gallery"
                     android:background="@drawable/circle_button_background"
-                    android:backgroundTint="#F39C12"
+                    android:backgroundTint="#ff6b35"
                     android:contentDescription="Galerie"
                     android:layout_marginEnd="8dp" />
 
@@ -305,7 +310,7 @@
                     android:layout_height="48dp"
                     android:src="@android:drawable/ic_media_play"
                     android:background="@drawable/circle_button_background"
-                    android:backgroundTint="#2ECC71"
+                    android:backgroundTint="#43b581"
                     android:contentDescription="Vidéo"
                     android:layout_marginEnd="8dp" />
 

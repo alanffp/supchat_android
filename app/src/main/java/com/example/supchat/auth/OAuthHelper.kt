@@ -30,26 +30,32 @@ class OAuthHelper(
     }
 
     /**
-     * Initie l'authentification Google
+     * Initie l'authentification Google avec paramètres de redirection forcés
      */
     fun initiateGoogleLogin(activity: Activity) {
-        val authUrl = "$baseUrl/api/v1/auth/google"
+        val redirectUri = "$baseUrl/api/v1/auth/google/callback"
+        val authUrl = "$baseUrl/api/v1/auth/google?redirect_uri=${Uri.encode(redirectUri)}"
+        Log.d(TAG, "Google auth URL: $authUrl")
         openCustomTab(activity, authUrl)
     }
 
     /**
-     * Initie l'authentification Facebook
+     * Initie l'authentification Facebook avec paramètres de redirection forcés
      */
     fun initiateFacebookLogin(activity: Activity) {
-        val authUrl = "$baseUrl/api/v1/auth/facebook"
+        val redirectUri = "$baseUrl/api/v1/auth/facebook/callback"
+        val authUrl = "$baseUrl/api/v1/auth/facebook?redirect_uri=${Uri.encode(redirectUri)}"
+        Log.d(TAG, "Facebook auth URL: $authUrl")
         openCustomTab(activity, authUrl)
     }
 
     /**
-     * Initie l'authentification Microsoft
+     * Initie l'authentification Microsoft avec paramètres de redirection forcés
      */
     fun initiateMicrosoftLogin(activity: Activity) {
-        val authUrl = "$baseUrl/api/v1/auth/microsoft"
+        val redirectUri = "$baseUrl/api/v1/auth/microsoft/callback"
+        val authUrl = "$baseUrl/api/v1/auth/microsoft?redirect_uri=${Uri.encode(redirectUri)}"
+        Log.d(TAG, "Microsoft auth URL: $authUrl")
         openCustomTab(activity, authUrl)
     }
 

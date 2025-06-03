@@ -1,22 +1,30 @@
 package com.example.supchat.ui.home
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.OpenableColumns
 import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,6 +37,10 @@ import com.example.supchat.ui.dialogs.RepliesDialog
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * Fragment pour afficher et interagir avec les messages d'un canal
@@ -45,6 +57,19 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
     private lateinit var replyInfoText: TextView
     private lateinit var cancelReplyButton: ImageButton
 
+    // ✅ AJOUT: Variables pour la gestion des fichiers
+    private lateinit var attachButton: ImageButton
+    private lateinit var attachmentOptionsContainer: LinearLayout
+    private var isAttachmentOptionsVisible = false
+    private var currentPhotoPath: String? = null
+
+    // ✅ AJOUT: Vues pour les options de fichiers
+    private lateinit var fileButton: Button
+    private lateinit var pollButton: Button
+    private lateinit var cameraButton: ImageButton
+    private lateinit var galleryButton: ImageButton
+    private lateinit var videoButton: ImageButton
+
     private var canalId: String = ""
     private var canalNom: String = ""
     private var workspaceId: String? = null
@@ -55,6 +80,42 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
     private var autoRefreshHandler = Handler(Looper.getMainLooper())
     private var isAutoRefreshEnabled = true
     private val AUTO_REFRESH_INTERVAL = 30000L // 30 secondes
+
+    // ✅ AJOUT: Lanceurs d'activité pour les fichiers
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { handleSelectedFile(it, "Image de la galerie") }
+    }
+
+    private val cameraLauncher = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success: Boolean ->
+        if (success) {
+            currentPhotoPath?.let { path ->
+                val file = File(path)
+                if (file.exists()) {
+                    uploadFile(file, "Photo prise")
+                }
+            }
+        }
+    }
+
+    private val fileLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { handleSelectedFile(it, "Fichier sélectionné") }
+    }
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            openCamera()
+        } else {
+            Toast.makeText(context, "Permission caméra refusée", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     companion object {
         private const val TAG = "ChatFragment"
@@ -112,7 +173,7 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
         return try {
             val view = inflater.inflate(R.layout.fragment_chat, container, false)
 
-            // Initialiser les vues
+            // Initialiser les vues existantes
             messageInput = view.findViewById(R.id.message_input)
             backButton = view.findViewById(R.id.back_button)
             sendButton = view.findViewById(R.id.send_button)
@@ -122,6 +183,21 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
             replyInfoBar = view.findViewById(R.id.reply_info_bar)
             replyInfoText = view.findViewById(R.id.reply_info_text)
             cancelReplyButton = view.findViewById(R.id.cancel_reply_button)
+
+            // ✅ AJOUT: Initialiser les vues pour les fichiers
+            attachButton = view.findViewById(R.id.attach_button)
+            attachmentOptionsContainer = view.findViewById(R.id.attachment_options_container)
+
+            // Initialiser les options de fichiers (si elles existent dans le XML)
+            try {
+                fileButton = view.findViewById(R.id.option_file)
+                pollButton = view.findViewById(R.id.option_poll) // ou créer un bouton sondage
+                cameraButton = view.findViewById(R.id.option_camera)
+                galleryButton = view.findViewById(R.id.option_image)
+                videoButton = view.findViewById(R.id.option_video) // ou un autre bouton
+            } catch (e: Exception) {
+                Log.w(TAG, "Certaines vues de fichiers non trouvées, fonctionnalité limitée")
+            }
 
             view
         } catch (e: Exception) {
@@ -202,6 +278,9 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
                 cancelReply()
             }
 
+            // ✅ AJOUT: Configurer les boutons de fichiers
+            setupFileButtons()
+
             // Charger les messages
             chargerMessages()
 
@@ -217,6 +296,262 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
         // Arrêter le rafraîchissement automatique
         stopAutoRefresh()
         super.onDestroyView()
+    }
+
+    // ✅ AJOUT: Configuration des boutons de fichiers
+    private fun setupFileButtons() {
+        attachButton.setOnClickListener {
+            toggleAttachmentOptions()
+        }
+
+        // Configurer les options si elles existent
+        try {
+            fileButton.setOnClickListener {
+                openFilePicker()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Bouton fichier non trouvé")
+        }
+
+        try {
+            pollButton.setOnClickListener {
+                Toast.makeText(context, "Sondage - À implémenter", Toast.LENGTH_SHORT).show()
+                hideAttachmentOptions()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Bouton sondage non trouvé")
+        }
+
+        try {
+            cameraButton.setOnClickListener {
+                checkCameraPermissionAndOpen()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Bouton caméra non trouvé")
+        }
+
+        try {
+            galleryButton.setOnClickListener {
+                openGallery()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Bouton galerie non trouvé")
+        }
+
+        try {
+            videoButton.setOnClickListener {
+                openVideoPicker()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Bouton vidéo non trouvé")
+        }
+    }
+
+    // ✅ AJOUT: Gestion de l'affichage des options d'attachement
+    private fun toggleAttachmentOptions() {
+        if (isAttachmentOptionsVisible) {
+            hideAttachmentOptions()
+        } else {
+            showAttachmentOptions()
+        }
+    }
+
+    private fun showAttachmentOptions() {
+        isAttachmentOptionsVisible = true
+
+        // Changer l'icône en croix
+        attachButton.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+
+        // Animer l'apparition de la zone d'options
+        attachmentOptionsContainer.visibility = View.VISIBLE
+        attachmentOptionsContainer.alpha = 0f
+        attachmentOptionsContainer.animate()
+            .alpha(1f)
+            .setDuration(200)
+            .start()
+    }
+
+    private fun hideAttachmentOptions() {
+        isAttachmentOptionsVisible = false
+
+        // Remettre l'icône +
+        attachButton.setImageResource(android.R.drawable.ic_menu_add)
+
+        // Animer la disparition de la zone d'options
+        attachmentOptionsContainer.animate()
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction {
+                attachmentOptionsContainer.visibility = View.GONE
+            }
+            .start()
+    }
+
+    // ✅ AJOUT: Méthodes pour ouvrir les sélecteurs de fichiers
+    private fun openFilePicker() {
+        hideAttachmentOptions()
+        fileLauncher.launch("*/*")
+    }
+
+    private fun openGallery() {
+        hideAttachmentOptions()
+        galleryLauncher.launch("image/*")
+    }
+
+    private fun openVideoPicker() {
+        hideAttachmentOptions()
+        galleryLauncher.launch("video/*")
+    }
+
+    private fun checkCameraPermissionAndOpen() {
+        hideAttachmentOptions()
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                openCamera()
+            }
+            else -> {
+                permissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
+
+    private fun openCamera() {
+        val photoFile = createImageFile()
+        photoFile?.let { file ->
+            currentPhotoPath = file.absolutePath
+            val photoURI = FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.fileprovider",
+                file
+            )
+            cameraLauncher.launch(photoURI)
+        }
+    }
+
+    // ✅ AJOUT: Création d'un fichier temporaire pour la photo
+    private fun createImageFile(): File? {
+        return try {
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val imageFileName = "JPEG_${timeStamp}_"
+            val storageDir = File(requireContext().cacheDir, "images")
+            if (!storageDir.exists()) {
+                storageDir.mkdirs()
+            }
+            File.createTempFile(imageFileName, ".jpg", storageDir)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur création fichier image", e)
+            null
+        }
+    }
+
+    // ✅ AJOUT: Gestion des fichiers sélectionnés
+    private fun handleSelectedFile(uri: Uri, description: String) {
+        try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val fileName = getFileName(uri) ?: "fichier_${System.currentTimeMillis()}"
+
+            val tempFile = File(requireContext().cacheDir, fileName)
+            val outputStream = FileOutputStream(tempFile)
+
+            inputStream?.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            uploadFile(tempFile, description)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur traitement fichier", e)
+            Toast.makeText(context, "Erreur lors du traitement du fichier", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ✅ AJOUT: Récupération du nom de fichier
+    private fun getFileName(uri: Uri): String? {
+        var result: String? = null
+        if (uri.scheme == "content") {
+            val cursor = requireContext().contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex >= 0) {
+                        result = it.getString(nameIndex)
+                    }
+                }
+            }
+        }
+        if (result == null) {
+            result = uri.path
+            val cut = result?.lastIndexOf('/')
+            if (cut != -1) {
+                result = result?.substring(cut!! + 1)
+            }
+        }
+        return result
+    }
+
+    // ✅ AJOUT: Upload de fichier vers le canal
+    private fun uploadFile(file: File, description: String) {
+        val token = requireActivity().getSharedPreferences("SupChatPrefs", Context.MODE_PRIVATE)
+            .getString("auth_token", "") ?: ""
+
+        if (token.isEmpty()) {
+            Toast.makeText(context, "Session expirée", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (workspaceId.isNullOrEmpty() || canalId.isEmpty()) {
+            Toast.makeText(context, "Erreur: Informations manquantes", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val maxSize = 20 * 1024 * 1024
+        if (file.length() > maxSize) {
+            Toast.makeText(context, "Fichier trop volumineux (max 20MB)", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        progressBar.visibility = View.VISIBLE
+
+        // ✅ UTILISER LA NOUVELLE MÉTHODE POUR LES CANAUX
+        ApiClient.uploadFileToCanal(token, workspaceId!!, canalId, file, description)
+            .enqueue(object : Callback<MessagesResponse> {
+                override fun onResponse(
+                    call: Call<MessagesResponse>,
+                    response: Response<MessagesResponse>
+                ) {
+                    progressBar.visibility = View.GONE
+                    if (!isAdded) return
+
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Fichier envoyé avec succès", Toast.LENGTH_SHORT).show()
+                        chargerMessages()
+
+                        if (file.path.contains(requireContext().cacheDir.path)) {
+                            file.delete()
+                        }
+                    } else {
+                        val errorMessage = when (response.code()) {
+                            413 -> "Fichier trop volumineux"
+                            415 -> "Type de fichier non supporté"
+                            400 -> "Données invalides"
+                            404 -> "Canal non trouvé"
+                            else -> "Erreur lors de l'envoi (${response.code()})"
+                        }
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<MessagesResponse>, t: Throwable) {
+                    progressBar.visibility = View.GONE
+                    if (!isAdded) return
+                    Toast.makeText(context, "Erreur réseau: ${t.message}", Toast.LENGTH_LONG).show()
+                }
+            })
     }
 
     /**
@@ -626,28 +961,16 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
             return
         }
 
-        // ✅ CORRECTION: Ne pas afficher la barre de progression pour les réactions
-        // progressBar.visibility = View.VISIBLE  // ← ENLEVER CETTE LIGNE
-
         ApiClient.addReaction(token, workspaceId!!, canalId, message.id, emoji)
             .enqueue(object : Callback<MessagesResponse> {
                 override fun onResponse(call: Call<MessagesResponse>, response: Response<MessagesResponse>) {
-                    // ✅ CORRECTION: Ne pas masquer la barre de progression ici
-                    // progressBar.visibility = View.GONE  // ← ENLEVER CETTE LIGNE
-
                     if (response.isSuccessful) {
                         Log.d("ChatFragment", "✅ Réaction ajoutée avec succès")
                         response.body()?.let { messagesResponse ->
                             Log.d("ChatFragment", "📦 Messages reçus: ${messagesResponse.data.messages.size}")
 
-                            // ✅ CORRECTION: Mettre à jour directement sans recharger
                             requireActivity().runOnUiThread {
-                                // Juste mettre à jour l'adaptateur avec les nouvelles données
                                 messageAdapter.updateMessages(messagesResponse.data.messages)
-
-                                // ✅ CORRECTION: Ne pas défiler, rester à la position actuelle
-                                // scrollToBottom()  // ← ENLEVER CETTE LIGNE
-
                                 Log.d("ChatFragment", "🔄 Adaptateur mis à jour - réaction ajoutée")
                             }
                         }
@@ -784,12 +1107,6 @@ class ChatFragment : Fragment(), MessageAdapter.MessageActionListener {
 
     /**
      * Supprime un message existant
-     */
-    // Dans ChatFragment.kt
-
-    /**
-     * Méthode pour supprimer un message
-     * Appelée lorsque l'utilisateur confirme la suppression d'un message
      */
     private fun deleteMessage(messageId: String) {
         // Obtenir le token d'authentification
