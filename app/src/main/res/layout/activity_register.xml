@@ -1,73 +1,229 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
+    android:background="@drawable/login_background_gradient"
     tools:context=".ui.auth.RegisterActivity">
 
-    <TextView
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Inscription"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="32dp"/>
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-    <EditText
-        android:id="@+id/emailEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Email"
-        android:inputType="textEmailAddress"
-        android:layout_marginBottom="16dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:minHeight="600dp">
 
-    <EditText
-        android:id="@+id/usernameEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Nom d'utilisateur"
-        android:inputType="text"
-        android:layout_marginBottom="16dp"/>
+            <!-- Logo et titre -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginBottom="32dp">
 
-    <EditText
-        android:id="@+id/firstNameEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Prénom"
-        android:inputType="textPersonName"
-        android:layout_marginBottom="16dp"/>
+                <!-- Logo de l'app -->
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@mipmap/ic_launcher_foreground"
+                    android:layout_marginBottom="12dp"
+                    android:elevation="8dp" />
 
-    <EditText
-        android:id="@+id/lastNameEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Nom de famille"
-        android:inputType="textPersonName"
-        android:layout_marginBottom="16dp"/>
+                <!-- Titre principal -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SupChat"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:fontFamily="sans-serif-light"
+                    android:layout_marginBottom="8dp" />
 
-    <EditText
-        android:id="@+id/passwordEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Mot de passe"
-        android:inputType="textPassword"
-        android:layout_marginBottom="16dp"/>
+                <!-- Sous-titre -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Créez votre compte"
+                    android:textSize="16sp"
+                    android:textColor="#b3ffffff"
+                    android:gravity="center" />
+            </LinearLayout>
 
-    <EditText
-        android:id="@+id/confirmPasswordEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Confirmer le mot de passe"
-        android:inputType="textPassword"
-        android:layout_marginBottom="32dp"/>
+            <!-- Carte d'inscription -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/login_card_background"
+                android:padding="32dp"
+                android:elevation="12dp"
+                android:layout_marginBottom="24dp">
 
-    <Button
-        android:id="@+id/registerButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="S'inscrire"
-        android:padding="12dp"/>
-</LinearLayout>
+                <!-- Titre de la carte -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Inscription"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:gravity="center"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Champ Email -->
+                <EditText
+                    android:id="@+id/emailEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Adresse email"
+                    android:inputType="textEmailAddress"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_dialog_email"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Champ Nom d'utilisateur -->
+                <EditText
+                    android:id="@+id/usernameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Nom d'utilisateur"
+                    android:inputType="text"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_menu_manage"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Champ Prénom -->
+                <EditText
+                    android:id="@+id/firstNameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Prénom"
+                    android:inputType="textPersonName"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Champ Nom de famille -->
+                <EditText
+                    android:id="@+id/lastNameEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Nom de famille"
+                    android:inputType="textPersonName"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Champ Mot de passe -->
+                <EditText
+                    android:id="@+id/passwordEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Mot de passe"
+                    android:inputType="textPassword"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_lock_lock"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Champ Confirmer mot de passe -->
+                <EditText
+                    android:id="@+id/confirmPasswordEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:hint="Confirmer le mot de passe"
+                    android:inputType="textPassword"
+                    android:textColor="#ffffff"
+                    android:textColorHint="#80ffffff"
+                    android:background="@drawable/modern_input_background"
+                    android:padding="16dp"
+                    android:drawableStart="@android:drawable/ic_lock_lock"
+                    android:drawablePadding="12dp"
+                    android:drawableTint="#ff6b35"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Bouton d'inscription -->
+                <Button
+                    android:id="@+id/registerButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="S'inscrire"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:background="@drawable/primary_button_background"
+                    android:elevation="4dp"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <!-- Footer -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Déjà un compte ? "
+                    android:textColor="#888888"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/loginText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Se connecter"
+                    android:textColor="#ff6b35"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:padding="8dp"
+                    android:background="?android:attr/selectableItemBackground" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Indicateur de chargement -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:indeterminateTint="#ff6b35"
+        android:elevation="16dp" />
+
+</RelativeLayout>

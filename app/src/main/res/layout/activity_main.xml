@@ -1,33 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="16dp"
+    android:background="@drawable/login_background_gradient"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bienvenue sur SupChat"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="48dp"/>
-
-    <Button
-        android:id="@+id/loginButton"
+    <!-- Contenu principal centré -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connexion"
-        android:layout_marginBottom="16dp"
-        android:padding="12dp"/>
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:layout_centerInParent="true">
 
-    <Button
-        android:id="@+id/registerButton"
+        <!-- Logo de l'app -->
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@mipmap/ic_launcher_foreground"
+            android:layout_marginBottom="32dp"
+            android:elevation="8dp" />
+
+        <!-- Titre principal -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SupChat"
+            android:textSize="42sp"
+            android:textStyle="bold"
+            android:textColor="#ffffff"
+            android:fontFamily="sans-serif-light"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Sous-titre -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Votre nouvelle plateforme de communication"
+            android:textSize="18sp"
+            android:textColor="#b3ffffff"
+            android:gravity="center"
+            android:layout_marginBottom="48dp" />
+
+    </LinearLayout>
+
+    <!-- Indicateur de swipe en bas -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Inscription"
-        android:padding="12dp"/>
-</LinearLayout>
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_alignParentBottom="true"
+        android:padding="32dp">
+
+        <!-- Icône de swipe -->
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_upload"
+            android:layout_marginBottom="8dp"
+            android:alpha="0.7"
+            android:tint="#ffffff" />
+
+        <!-- Texte indicateur -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Glissez vers le haut pour commencer"
+            android:textColor="#b3ffffff"
+            android:textSize="14sp"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+</RelativeLayout>

@@ -28,7 +28,7 @@ class LoginActivity : AppCompatActivity(), OAuthHelper.OAuthCallback {
     private lateinit var googleLoginButton: Button
     private lateinit var facebookLoginButton: Button
     private lateinit var microsoftLoginButton: Button
-
+    private lateinit var signUpText: TextView
     private lateinit var oAuthHelper: OAuthHelper
 
     companion object {
@@ -69,6 +69,7 @@ class LoginActivity : AppCompatActivity(), OAuthHelper.OAuthCallback {
         googleLoginButton = findViewById(R.id.googleLoginButton)
         facebookLoginButton = findViewById(R.id.facebookLoginButton)
         microsoftLoginButton = findViewById(R.id.microsoftLoginButton)
+        signUpText = findViewById(R.id.signUpText)
     }
 
     private fun setupListeners() {
@@ -79,8 +80,13 @@ class LoginActivity : AppCompatActivity(), OAuthHelper.OAuthCallback {
 
         // Mot de passe oublié
         forgotPasswordText.setOnClickListener {
-            // TODO: Implémenter la fonctionnalité mot de passe oublié
-            Toast.makeText(this, "Fonctionnalité à venir", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, ForgotPasswordActivity::class.java)
+            startActivity(intent)
+        }
+
+        signUpText.setOnClickListener {
+            val intent = Intent(this, RegisterActivity::class.java)
+            startActivity(intent)
         }
 
         // OAuth Login Buttons

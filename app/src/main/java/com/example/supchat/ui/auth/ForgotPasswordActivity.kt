@@ -1,9 +1,11 @@
 package com.example.supchat.ui.auth
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.supchat.R
@@ -17,6 +19,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
 
     private lateinit var emailEditText: EditText
     private lateinit var resetPasswordButton: Button
+    private lateinit var backToLoginText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,7 +28,13 @@ class ForgotPasswordActivity : AppCompatActivity() {
         // Initialisation des vues
         emailEditText = findViewById(R.id.emailEditText)
         resetPasswordButton = findViewById(R.id.resetPasswordButton)
+        backToLoginText = findViewById(R.id.backToLoginText)
 
+        backToLoginText.setOnClickListener {
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         resetPasswordButton.setOnClickListener {
             val email = emailEditText.text.toString().trim()
 
