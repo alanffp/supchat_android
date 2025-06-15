@@ -1,68 +1,187 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#2f3136"
+    android:padding="24dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nom du workspace"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-
-    <EditText
-        android:id="@+id/edit_workspace_name"
+    <!-- En-tête du dialog -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="Entrez le nom du workspace"
-        android:inputType="text"
-        android:maxLines="1" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Description (optionnelle)"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        <!-- Icône workspace -->
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_add"
+            android:layout_marginEnd="12dp"
+            app:tint="#ff6b35"
+            android:background="#404040"
+            android:padding="6dp" />
 
-    <EditText
-        android:id="@+id/edit_workspace_description"
+        <!-- Titre principal -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Créer un workspace"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#ffffff"
+            android:fontFamily="sans-serif-medium" />
+    </LinearLayout>
+
+    <!-- Section Nom du workspace -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="Entrez une description"
-        android:inputType="textMultiLine"
-        android:minLines="2" />
+        android:orientation="vertical"
+        android:layout_marginBottom="20dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Visibilité"
-        android:textSize="16sp"
-        android:textStyle="bold" />
-
-    <RadioGroup
-        android:id="@+id/visibility_radio_group"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp">
-
-        <RadioButton
-            android:id="@+id/visibility_public"
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Public"
-            android:checked="true" />
+            android:text="NOM DU WORKSPACE"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#72767d"
+            android:layout_marginBottom="8dp" />
 
-        <RadioButton
-            android:id="@+id/visibility_private"
+        <EditText
+            android:id="@+id/edit_workspace_name"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Entrez le nom du workspace"
+            android:inputType="text"
+            android:maxLines="1"
+            android:textColor="#dcddde"
+            android:textColorHint="#72767d"
+            android:background="#40444b"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif" />
+    </LinearLayout>
+
+    <!-- Section Description -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="20dp">
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Privé" />
-    </RadioGroup>
+            android:text="DESCRIPTION (OPTIONNELLE)"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#72767d"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/edit_workspace_description"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:hint="Décrivez votre workspace..."
+            android:inputType="textMultiLine"
+            android:gravity="top|start"
+            android:textColor="#dcddde"
+            android:textColorHint="#72767d"
+            android:background="#40444b"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif" />
+    </LinearLayout>
+
+    <!-- Section Visibilité -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VISIBILITÉ"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#72767d"
+            android:layout_marginBottom="12dp" />
+
+        <RadioGroup
+            android:id="@+id/visibility_radio_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Option Public -->
+            <RadioButton
+                android:id="@+id/visibility_public"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:buttonTint="#ff6b35"
+                android:text="🌍 Public - Tout le monde peut rejoindre"
+                android:textColor="#dcddde"
+                android:textSize="16sp"
+                android:background="#40444b"
+                android:padding="16dp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Option Privé -->
+            <RadioButton
+                android:id="@+id/visibility_private"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:buttonTint="#ff6b35"
+                android:text="🔒 Privé - Sur invitation uniquement"
+                android:textColor="#dcddde"
+                android:textSize="16sp"
+                android:background="#40444b"
+                android:padding="16dp" />
+
+        </RadioGroup>
+    </LinearLayout>
+
+    <!-- Boutons d'action -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <!-- Bouton Annuler -->
+        <Button
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Annuler"
+            android:textColor="#b9bbbe"
+            android:textSize="14sp"
+            android:background="?android:attr/selectableItemBackground"
+            android:padding="10dp"
+            android:layout_marginEnd="12dp"
+            android:minWidth="80dp" />
+
+        <!-- Bouton Créer -->
+        <Button
+            android:id="@+id/create_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="✓ Créer"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="#ff6b35"
+            android:padding="10dp"
+            android:minWidth="80dp"
+            android:elevation="2dp" />
+    </LinearLayout>
 </LinearLayout>

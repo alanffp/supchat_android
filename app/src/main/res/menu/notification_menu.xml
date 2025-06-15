@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/mark_as_read"
+        android:title="Marquer comme lu"
+        android:icon="@android:drawable/ic_menu_view" />
+
+    <item
+        android:id="@+id/delete_notification"
+        android:title="Supprimer"
+        android:icon="@android:drawable/ic_menu_delete" />
+
+    <item
+        android:id="@+id/notification_details"
+        android:title="Détails"
+        android:icon="@android:drawable/ic_menu_info_details" />
+
+</menu>

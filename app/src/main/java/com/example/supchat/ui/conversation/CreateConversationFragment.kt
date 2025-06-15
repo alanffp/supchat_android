@@ -73,31 +73,53 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_create_conversation, container, false)
+        Log.d(TAG, "=== onCreateView DÉBUT ===")
 
-        // ✅ RÉCUPÉRER LES ARGUMENTS PASSÉS DEPUIS HomeActivity
-        arguments?.let { args ->
-            val isGroup = args.getBoolean(ARG_IS_GROUP, false)
-            val preDefinedGroupName = args.getString(ARG_GROUP_NAME)
+        return try {
+            Log.d(TAG, "Tentative d'inflation du layout...")
+            val view = inflater.inflate(R.layout.fragment_create_conversation, container, false)
+            Log.d(TAG, "Layout gonflé avec succès")
 
-            if (isGroup && !preDefinedGroupName.isNullOrEmpty()) {
-                groupName = preDefinedGroupName
+            // ✅ RÉCUPÉRER LES ARGUMENTS PASSÉS DEPUIS HomeActivity
+            arguments?.let { args ->
+                val isGroup = args.getBoolean(ARG_IS_GROUP, false)
+                val preDefinedGroupName = args.getString(ARG_GROUP_NAME)
+                Log.d(TAG, "Arguments récupérés: isGroup=$isGroup, groupName=$preDefinedGroupName")
+
+                if (isGroup && !preDefinedGroupName.isNullOrEmpty()) {
+                    groupName = preDefinedGroupName
+                    Log.d(TAG, "Nom de groupe défini: $groupName")
+                }
             }
+
+            Log.d(TAG, "Début initViews...")
+            initViews(view)
+            Log.d(TAG, "initViews terminé")
+
+            Log.d(TAG, "Début setupRecyclerViews...")
+            setupRecyclerViews()
+            Log.d(TAG, "setupRecyclerViews terminé")
+
+            Log.d(TAG, "Début setupListeners...")
+            setupListeners()
+            Log.d(TAG, "setupListeners terminé")
+
+            Log.d(TAG, "Début applyInitialConfiguration...")
+            applyInitialConfiguration()
+            Log.d(TAG, "applyInitialConfiguration terminé")
+
+            Log.d(TAG, "=== onCreateView SUCCÈS ===")
+            view
+
+        } catch (e: Exception) {
+            Log.e(TAG, "=== ERREUR dans onCreateView ===", e)
+            Toast.makeText(context, "Erreur lors du chargement: ${e.message}", Toast.LENGTH_LONG).show()
+
+            // Retourner une vue simple en cas d'erreur
+            createFallbackView(inflater, container)
         }
-
-        initViews(view)
-        setupRecyclerViews()
-        setupListeners()
-
-        // ✅ APPLIQUER LA CONFIGURATION INITIALE SELON LES PARAMÈTRES
-        applyInitialConfiguration()
-
-        return view
     }
 
-    /**
-     * Configure l'état initial du fragment selon les paramètres reçus
-     */
     private fun applyInitialConfiguration() {
         val isGroup = arguments?.getBoolean(ARG_IS_GROUP, false) ?: false
 
@@ -135,6 +157,47 @@ class CreateConversationFragment : Fragment(), UserSearchAdapter.OnUserClickList
         setGroupNameButton.setOnClickListener {
             showGroupNameDialog()
         }
+    }
+    private fun createFallbackView(inflater: LayoutInflater, container: ViewGroup?): View {
+        Log.d(TAG, "Création d'une vue de fallback...")
+
+        // Créer une vue simple programmatiquement
+        val linearLayout = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(android.graphics.Color.parseColor("#36393f"))
+            setPadding(60, 60, 60, 60)
+            gravity = android.view.Gravity.CENTER
+        }
+
+        val title = TextView(requireContext()).apply {
+            text = "Erreur de chargement"
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 24f
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+
+        val info = TextView(requireContext()).apply {
+            text = "Une erreur s'est produite lors du chargement\ndu fragment de création de conversation.\n\nVérifiez les logs pour plus de détails."
+            setTextColor(android.graphics.Color.parseColor("#b9bbbe"))
+            textSize = 16f
+            gravity = android.view.Gravity.CENTER
+        }
+
+        val button = Button(requireContext()).apply {
+            text = "Retour"
+            setTextColor(android.graphics.Color.WHITE)
+            setBackgroundColor(android.graphics.Color.parseColor("#ff6b35"))
+            setOnClickListener {
+                Log.d(TAG, "Retour depuis fallback")
+                requireActivity().supportFragmentManager.popBackStack()
+            }
+        }
+
+        linearLayout.addView(title)
+        linearLayout.addView(info)
+        linearLayout.addView(button)
+
+        return linearLayout
     }
 
     private fun setupRecyclerViews() {

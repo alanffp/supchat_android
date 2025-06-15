@@ -3,8 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@color/colorPrimary">
+    android:background="#2f3136"
+    android:padding="20dp">
 
     <!-- Titre -->
     <TextView
@@ -12,8 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="💬 Créer une conversation"
-        android:textColor="@android:color/white"
-        android:textSize="20sp"
+        android:textColor="#ffffff"
+        android:textSize="18sp"
         android:textStyle="bold"
         android:gravity="center"
         android:layout_marginBottom="16dp" />
@@ -24,56 +24,57 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Donnez un nom à votre conversation.\nVous pourrez ensuite ajouter des participants."
-        android:textColor="#CCFFFFFF"
+        android:textColor="#b9bbbe"
         android:textSize="14sp"
         android:gravity="center"
         android:layout_marginBottom="20dp" />
 
     <!-- Champ de saisie -->
-    <com.google.android.material.textfield.TextInputLayout
+    <EditText
+        android:id="@+id/group_name_input"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:hint="Nom de la conversation">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/group_name_input"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Ex: Équipe projet, Amis, Famille..."
-            android:textColor="@android:color/white"
-            android:textColorHint="#99FFFFFF"
-            android:maxLines="1"
-            android:inputType="text" />
-
-    </com.google.android.material.textfield.TextInputLayout>
+        android:layout_height="48dp"
+        android:hint="Nom de la conversation"
+        android:textColor="#dcddde"
+        android:textColorHint="#72767d"
+        android:background="#40444b"
+        android:padding="12dp"
+        android:textSize="16sp"
+        android:maxLines="1"
+        android:inputType="text"
+        android:layout_marginBottom="20dp" />
 
     <!-- Boutons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="end">
+        android:gravity="end"
+        android:padding="10dp">
 
+        <!-- Bouton Annuler -->
         <Button
             android:id="@+id/cancel_group_name_button"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="36dp"
             android:text="Annuler"
+            android:textColor="#b9bbbe"
             android:textSize="14sp"
-            android:backgroundTint="#95A5A6"
-            android:textColor="@android:color/white"
-            android:layout_marginEnd="12dp" />
+            android:background="?android:attr/selectableItemBackground"
+            android:layout_marginEnd="12dp"
+            android:minWidth="80dp" />
 
+        <!-- Bouton Créer -->
         <Button
             android:id="@+id/confirm_group_name_button"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="36dp"
             android:text="✓ Créer"
+            android:textColor="#ffffff"
             android:textSize="14sp"
-            android:backgroundTint="#27AE60"
-            android:textColor="@android:color/white" />
-
+            android:textStyle="bold"
+            android:background="#ff6b35"
+            android:minWidth="80dp"
+            android:elevation="2dp" />
     </LinearLayout>
-
 </LinearLayout>

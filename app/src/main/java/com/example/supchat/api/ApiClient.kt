@@ -39,6 +39,7 @@ import com.example.supchat.models.response.WorkspacesResponse
 import com.example.supchat.models.response.messageprivate.ConversationDetailsResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
+import com.example.supchat.models.response.notifications.NotificationCountResponse
 import com.example.supchat.models.response.notifications.NotificationsResponse
 import com.google.gson.GsonBuilder
 import okhttp3.MultipartBody
@@ -461,17 +462,8 @@ object ApiClient {
         return instance.deconnexion("Bearer $token")
     }
 
-    fun getNotifications(token: String): Call<NotificationsResponse> {
-        return instance.getNotifications("Bearer $token")
-    }
-
-    fun markNotificationAsRead(token: String, notificationId: String): Call<NotificationsResponse> {
-        return instance.markNotificationAsRead("Bearer $token", notificationId)
-    }
-
-    fun markAllNotificationsAsRead(token: String): Call<NotificationsResponse> {
-        return instance.markAllNotificationsAsRead("Bearer $token")
-
+    fun getUnreadNotificationCount(token: String): Call<NotificationCountResponse> {
+        return instance.getUnreadNotificationCount("Bearer $token")
     }
 
     fun uploadFileToConversation(
@@ -599,5 +591,16 @@ object ApiClient {
         canalId: String
     ): Call<MessagesResponse> {
         return instance.getCanalFiles("Bearer $token", workspaceId, canalId)
+    }
+    fun getNotifications(token: String): Call<NotificationsResponse> {
+        return instance.getNotifications("Bearer $token")
+    }
+
+    fun markNotificationAsRead(token: String, notificationId: String): Call<NotificationsResponse> {
+        return instance.markNotificationAsRead("Bearer $token", notificationId)
+    }
+
+    fun markAllNotificationsAsRead(token: String): Call<NotificationsResponse> {
+        return instance.markAllNotificationsAsRead("Bearer $token")
     }
 }

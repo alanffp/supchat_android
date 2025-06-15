@@ -38,6 +38,7 @@ import com.example.supchat.models.response.WorkspacesResponse
 import com.example.supchat.models.response.messageprivate.ConversationDetailsResponse
 import com.example.supchat.models.response.messageprivate.ConversationMessagesResponse
 import com.example.supchat.models.response.messageprivate.PrivateMessagesResponse
+import com.example.supchat.models.response.notifications.NotificationCountResponse
 import com.example.supchat.models.response.notifications.NotificationsResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
@@ -357,22 +358,6 @@ interface ApiService {
         @Path("messageId") messageId: String
     ): Call<ConversationMessagesResponse>
 
-    @GET("/api/notifications")
-    fun getNotifications(
-        @Header("Authorization") token: String
-    ): Call<NotificationsResponse>
-
-    @PUT("/api/notifications/{id}/read")
-    fun markNotificationAsRead(
-        @Header("Authorization") token: String,
-        @Path("id") notificationId: String
-    ): Call<NotificationsResponse>
-
-    @PUT("/api/notifications/read-all")
-    fun markAllNotificationsAsRead(
-        @Header("Authorization") token: String
-    ): Call<NotificationsResponse>
-
     @Multipart
     @POST("/api/v1/fichiers/conversation/{conversationId}")
     fun uploadFileToConversation(
@@ -437,4 +422,25 @@ interface ApiService {
         @Path("workspaceId") workspaceId: String,
         @Path("canalId") canalId: String
     ): Call<MessagesResponse>
+
+    @GET("/api/notifications/nombre")
+    fun getUnreadNotificationCount(
+        @Header("Authorization") token: String
+    ): Call<NotificationCountResponse>
+
+    @GET("/api/notifications")
+    fun getNotifications(
+        @Header("Authorization") token: String
+    ): Call<NotificationsResponse>
+
+    @PATCH("/api/notifications/{id}/read")
+    fun markNotificationAsRead(
+        @Header("Authorization") token: String,
+        @Path("id") notificationId: String
+    ): Call<NotificationsResponse>
+
+    @PUT("/api/notifications/read-all")
+    fun markAllNotificationsAsRead(
+        @Header("Authorization") token: String
+    ): Call<NotificationsResponse>
 }

@@ -31,33 +31,31 @@ import com.example.supchat.socket.WebSocketService
 import com.example.supchat.ui.conversation.CreateConversationFragment
 import android.app.AlertDialog
 import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.widget.Button
 import com.google.android.material.textfield.TextInputEditText
-
-
-
-
+import android.graphics.Typeface
+import android.view.View
+import com.example.supchat.ui.notifications.NotificationsFragment
+import com.example.supchat.models.response.notifications.NotificationCountResponse
+import android.widget.EditText
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var menuButton: ImageButton
     private lateinit var serverListContainer: LinearLayout
     private lateinit var mainContentContainer: FrameLayout
-
-    // ✅ CORRECTION: Changer de TextView vers LinearLayout
     private lateinit var logoutButton: LinearLayout
     private lateinit var profileButton: LinearLayout
-
     private var currentWorkspaceName: String? = null
     private var workspaces: List<Workspace> = emptyList()
     private var currentWorkspaceId: String? = null
     private lateinit var themeToggleButton: TextView
-
-    // ✅ CORRECTION: Changer de TextView vers LinearLayout
+    private lateinit var notificationsButton: ImageButton
+    private lateinit var notificationBadge: TextView
     private lateinit var searchUsersButton: LinearLayout
-
-    // ✅ Propriétés WebSocket
     private lateinit var app: SupChatApplication
+    private lateinit var supChatTitle: TextView
     private var webSocketService: WebSocketService? = null
 
     companion object {
@@ -78,19 +76,11 @@ class HomeActivity : AppCompatActivity() {
                 return
             }
 
-            // ✅ Initialiser WebSocket seulement si le token existe
             initializeWebSocket()
-
-            // ✅ Initialisation sécurisée des vues
             initializeViews()
-
-            // ✅ Configuration des listeners
             setupListeners()
-
-            // Charger les workspaces depuis l'API
             fetchWorkspaces()
-
-            // Afficher l'écran d'accueil en attendant
+            loadUnreadNotificationCount()
             showWelcomeScreen()
 
         } catch (e: Exception) {
@@ -106,11 +96,30 @@ class HomeActivity : AppCompatActivity() {
             menuButton = findViewById(R.id.menu_button)
             serverListContainer = findViewById(R.id.server_list)
             mainContentContainer = findViewById(R.id.main_content_container)
-
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
+            notificationsButton = findViewById(R.id.notifications_button)
             logoutButton = findViewById(R.id.logout_text)
             profileButton = findViewById(R.id.profile_text)
             searchUsersButton = findViewById(R.id.search_users_text)
+            supChatTitle = findViewById(R.id.supchat_title)
+
+            // Créer le badge de notification
+            notificationBadge = TextView(this).apply {
+                layoutParams = ViewGroup.LayoutParams(24, 24)
+                textSize = 10f
+                setTextColor(getColor(android.R.color.white))
+                setBackgroundResource(R.drawable.notification_badge_background)
+                gravity = android.view.Gravity.CENTER
+                setTypeface(null, Typeface.BOLD)
+                visibility = View.GONE
+            }
+
+            // Ajouter le badge au conteneur parent du bouton
+            val notificationContainer = notificationsButton.parent as ViewGroup
+            notificationContainer.addView(notificationBadge)
+
+            // Positionner le badge en haut à droite du bouton
+            notificationBadge.translationX = 30f
+            notificationBadge.translationY = -10f
 
             Log.d(TAG, "Vues initialisées avec succès")
         } catch (e: Exception) {
@@ -118,33 +127,54 @@ class HomeActivity : AppCompatActivity() {
             throw e
         }
     }
+
     private fun setupListeners() {
         try {
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
-            // Configuration du bouton "Créer une conversation" avec dialogue
+            supChatTitle.setOnClickListener {
+                Log.d(TAG, "Clic sur le titre SupChat - retour à l'accueil")
+
+                // Fermer le drawer s'il est ouvert
+                if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
+                    drawerLayout.closeDrawer(GravityCompat.END)
+                }
+
+                // Retourner à l'écran d'accueil (WelcomeFragment)
+                currentWorkspaceName = null
+                currentWorkspaceId = null
+                showWelcomeScreen()
+
+                // Réinitialiser la sélection des workspaces
+                updateWorkspaceSelection("")
+            }
+
+            // Configuration du bouton notifications
+            notificationsButton?.setOnClickListener {
+                openNotifications()
+            }
+
+            // Configuration du bouton notifications
+            notificationsButton?.setOnClickListener {
+                openNotifications()
+            }
+
             val createConversationText = findViewById<LinearLayout>(R.id.create_conversation_text)
             createConversationText?.setOnClickListener {
                 drawerLayout.closeDrawer(GravityCompat.END)
                 showConversationTypeDialog()
             }
 
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
-            // Initialiser le bouton de gestion des workspaces
             val manageWorkspacesButton = findViewById<LinearLayout>(R.id.manage_workspaces_text)
             manageWorkspacesButton?.setOnClickListener {
                 drawerLayout.closeDrawer(GravityCompat.END)
                 openWorkspaceManagement()
             }
 
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
-            // Initialiser le bouton de recherche de workspaces publics
             val searchPublicWorkspacesButton = findViewById<LinearLayout>(R.id.search_public_workspaces_text)
             searchPublicWorkspacesButton?.setOnClickListener {
                 drawerLayout.closeDrawer(GravityCompat.END)
                 openPublicWorkspaceSearch()
             }
 
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
             val privateMessagesText = findViewById<LinearLayout>(R.id.private_messages_text)
             privateMessagesText?.setOnClickListener {
                 drawerLayout.closeDrawer(GravityCompat.END)
@@ -155,7 +185,6 @@ class HomeActivity : AppCompatActivity() {
                     .commit()
             }
 
-            // Configuration du bouton menu pour ouvrir/fermer le drawer
             menuButton?.setOnClickListener {
                 if (drawerLayout.isDrawerOpen(GravityCompat.END)) {
                     drawerLayout.closeDrawer(GravityCompat.END)
@@ -164,23 +193,17 @@ class HomeActivity : AppCompatActivity() {
                 }
             }
 
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
-            // Configuration du bouton de déconnexion
             val logoutButton = findViewById<LinearLayout>(R.id.logout_text)
             logoutButton?.setOnClickListener {
                 deconnexionUtilisateur()
             }
 
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
-            // Configuration du bouton de profil
             val profileButton = findViewById<LinearLayout>(R.id.profile_text)
             profileButton?.setOnClickListener {
                 drawerLayout.closeDrawer(GravityCompat.END)
                 openProfile()
             }
 
-            // ✅ CORRECTION: Utiliser LinearLayout au lieu de TextView
-            // Configuration du bouton de recherche d'utilisateurs
             val searchUsersButton = findViewById<LinearLayout>(R.id.search_users_text)
             searchUsersButton?.setOnClickListener {
                 drawerLayout.closeDrawer(GravityCompat.END)
@@ -194,65 +217,157 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    private fun openNotifications() {
+        try {
+            val notificationsFragment = NotificationsFragment.newInstance()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.main_content_container, notificationsFragment)
+                .addToBackStack(null)
+                .commit()
+
+            Log.d(TAG, "Fragment de notifications ouvert")
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors de l'ouverture des notifications", e)
+            Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun updateNotificationBadge(unreadCount: Int) {
+        runOnUiThread {
+            if (unreadCount > 0) {
+                notificationBadge.text = if (unreadCount > 99) "99+" else unreadCount.toString()
+                notificationBadge.visibility = View.VISIBLE
+            } else {
+                notificationBadge.visibility = View.GONE
+            }
+
+            Log.d(TAG, "Badge de notification mis à jour: $unreadCount")
+        }
+    }
+
+    private fun loadUnreadNotificationCount() {
+        val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
+        if (token.isNullOrEmpty()) {
+            Log.w(TAG, "Token manquant pour charger le compteur de notifications")
+            return
+        }
+
+        ApiClient.getUnreadNotificationCount(token)
+            .enqueue(object : Callback<NotificationCountResponse> {
+                override fun onResponse(
+                    call: Call<NotificationCountResponse>,
+                    response: Response<NotificationCountResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        val count = response.body()?.data?.count ?: 0
+                        updateNotificationBadge(count)
+                        Log.d(TAG, "Compteur de notifications non lues: $count")
+                    } else {
+                        Log.e(TAG, "Erreur lors du chargement du compteur: ${response.code()}")
+                    }
+                }
+
+                override fun onFailure(call: Call<NotificationCountResponse>, t: Throwable) {
+                    Log.e(TAG, "Erreur réseau pour le compteur de notifications", t)
+                }
+            })
+    }
+
     private fun showConversationTypeDialog() {
-        // ✅ NOUVEAU: Dialogue direct pour saisir le nom de la conversation
         showConversationNameDialog()
     }
 
     private fun showConversationNameDialog() {
-        val dialogView = LayoutInflater.from(this)
-            .inflate(R.layout.dialog_group_name, null)
+        try {
+            Log.d(TAG, "Début de showConversationNameDialog")
 
-        val conversationNameInput: TextInputEditText = dialogView.findViewById(R.id.group_name_input)
-        val confirmButton: Button = dialogView.findViewById(R.id.confirm_group_name_button)
-        val cancelButton: Button = dialogView.findViewById(R.id.cancel_group_name_button)
+            val dialogView = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_group_name, null)
 
-        // ✅ Modifier les textes pour être plus génériques
-        val titleText = dialogView.findViewById<TextView>(R.id.dialog_title) // Si vous avez un titre dans le dialogue
-        titleText?.text = "💬 Créer une conversation"
+            val conversationNameInput = dialogView.findViewById<EditText>(R.id.group_name_input)
+            val confirmButton = dialogView.findViewById<Button>(R.id.confirm_group_name_button)
+            val cancelButton = dialogView.findViewById<Button>(R.id.cancel_group_name_button)
 
-        val descriptionText = dialogView.findViewById<TextView>(R.id.dialog_description) // Si vous avez une description
-        descriptionText?.text = "Donnez un nom à votre conversation.\nVous pourrez ensuite ajouter des participants."
-
-        // Changer le hint du champ de saisie
-        conversationNameInput.hint = "Nom de la conversation"
-
-        // Changer le texte du bouton
-        confirmButton.text = "✓ Créer"
-
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .setCancelable(true)
-            .create()
-
-        confirmButton.setOnClickListener {
-            val conversationName = conversationNameInput.text.toString().trim()
-            if (conversationName.isNotEmpty()) {
-                dialog.dismiss()
-                // ✅ Toujours créer comme un groupe avec le nom donné
-                openCreateConversationFragment(isGroup = true, groupName = conversationName)
-            } else {
-                Toast.makeText(this, "Veuillez saisir un nom de conversation", Toast.LENGTH_SHORT).show()
+            if (conversationNameInput == null || confirmButton == null || cancelButton == null) {
+                Log.e(TAG, "Erreur: Une ou plusieurs vues sont null")
+                Toast.makeText(this, "Erreur dans le layout du dialog", Toast.LENGTH_SHORT).show()
+                return
             }
-        }
 
-        cancelButton.setOnClickListener {
-            dialog.dismiss()
-        }
+            val titleText = dialogView.findViewById<TextView>(R.id.dialog_title)
+            titleText?.text = "💬 Créer une conversation"
 
-        dialog.show()
+            val descriptionText = dialogView.findViewById<TextView>(R.id.dialog_description)
+            descriptionText?.text = "Donnez un nom à votre conversation.\nVous pourrez ensuite ajouter des participants."
+
+            val dialog = AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create()
+
+            // Rendre le fond transparent (optionnel)
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            confirmButton.setOnClickListener {
+                try {
+                    val conversationName = conversationNameInput.text.toString().trim()
+                    if (conversationName.isNotEmpty()) {
+                        dialog.dismiss()
+                        // ✅ CHANGEMENT: Utiliser la méthode sécurisée
+                        openCreateConversationFragmentSafe(conversationName)
+                    } else {
+                        Toast.makeText(this, "Veuillez saisir un nom de conversation", Toast.LENGTH_SHORT).show()
+                        conversationNameInput.requestFocus()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erreur dans confirmButton click", e)
+                    Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            cancelButton.setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialog.show()
+            Log.d(TAG, "Dialog affiché avec succès")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur dans showConversationNameDialog", e)
+            Toast.makeText(this, "Erreur lors de l'ouverture du dialog: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
-    private fun openCreateConversationFragment(isGroup: Boolean, groupName: String?) {
-        val fragment = CreateConversationFragment.newInstance(isGroup, groupName)
+    private fun openCreateConversationFragmentSafe(groupName: String) {
+        try {
+            Log.d(TAG, "Début de openCreateConversationFragmentSafe avec nom: $groupName")
 
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.main_content_container, fragment)
-            .addToBackStack(null)
-            .commit()
+            // Vérifier que le fragment manager est disponible
+            if (supportFragmentManager.isDestroyed || supportFragmentManager.isStateSaved) {
+                Log.w(TAG, "FragmentManager non disponible")
+                Toast.makeText(this, "Impossible d'ouvrir la conversation maintenant", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Créer le fragment de manière sécurisée
+            val fragment = CreateConversationFragment.newInstance(true, groupName)
+
+            Log.d(TAG, "Fragment CreateConversationFragment créé")
+
+            // Lancer la transaction de manière sécurisée
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.main_content_container, fragment)
+                .addToBackStack(null)
+                .commitAllowingStateLoss() // Plus sûr que commit()
+
+            Log.d(TAG, "Transaction de fragment réalisée avec succès")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur dans openCreateConversationFragmentSafe", e)
+            Toast.makeText(this, "Erreur lors de l'ouverture: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    // ✅ Méthode pour initialiser WebSocket
     private fun initializeWebSocket() {
         try {
             app = application as? SupChatApplication ?: run {
@@ -268,13 +383,11 @@ class HomeActivity : AppCompatActivity() {
 
             webSocketService = app.getWebSocketService()
 
-            // Si WebSocket n'est pas connecté, l'initialiser
             if (!app.isWebSocketConnected()) {
                 app.initializeWebSocket(token)
                 webSocketService = app.getWebSocketService()
             }
 
-            // Observer le statut de connexion
             webSocketService?.connectionStatus?.observe(this) { isConnected ->
                 onWebSocketConnectionChanged(isConnected)
             }
@@ -282,30 +395,24 @@ class HomeActivity : AppCompatActivity() {
             Log.d(TAG, "WebSocket initialisé: ${app.isWebSocketConnected()}")
         } catch (e: Exception) {
             Log.e(TAG, "Erreur initialisation WebSocket", e)
-            // Ne pas faire planter l'app si WebSocket échoue
         }
     }
 
-    // ✅ Gérer les changements de connexion WebSocket
     private fun onWebSocketConnectionChanged(isConnected: Boolean) {
         runOnUiThread {
             if (isConnected) {
                 Log.d(TAG, "WebSocket connecté")
-                // Optionnel: afficher un indicateur de connexion
             } else {
                 Log.w(TAG, "WebSocket déconnecté")
-                // Optionnel: afficher un indicateur de déconnexion
             }
         }
     }
 
-    // ✅ Obtenir l'ID de l'utilisateur actuel
     fun getCurrentUserId(): String {
         return getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
             .getString("user_id", "") ?: ""
     }
 
-    // ✅ Obtenir le nom d'utilisateur actuel
     fun getCurrentUsername(): String {
         return getSharedPreferences("SupChatPrefs", MODE_PRIVATE)
             .getString("username", "") ?: ""
@@ -557,7 +664,6 @@ class HomeActivity : AppCompatActivity() {
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        // ✅ Déconnecter WebSocket avant l'API
         app.disconnectWebSocket()
 
         ApiClient.deconnexion(token)
@@ -597,14 +703,12 @@ class HomeActivity : AppCompatActivity() {
             })
     }
 
-    // ✅ Méthode redirectToLogin modifiée
     fun redirectToLogin(message: String = "") {
         try {
             if (message.isNotEmpty()) {
                 Toast.makeText(this, message, Toast.LENGTH_LONG).show()
             }
 
-            // Déconnecter WebSocket seulement s'il existe
             if (::app.isInitialized) {
                 app.disconnectWebSocket()
             }
@@ -620,19 +724,19 @@ class HomeActivity : AppCompatActivity() {
             finish()
         } catch (e: Exception) {
             Log.e(TAG, "Erreur dans redirectToLogin", e)
-            finish() // Fermer l'activité même en cas d'erreur
+            finish()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // ✅ Reconnecter WebSocket si nécessaire
-        if (!app.isWebSocketConnected()) {
+        if (::app.isInitialized && !app.isWebSocketConnected()) {
             val token = getSharedPreferences("SupChatPrefs", MODE_PRIVATE).getString("auth_token", "")
             if (!token.isNullOrEmpty()) {
                 app.reconnectWebSocket()
             }
         }
+        loadUnreadNotificationCount()
     }
 
     fun applyTheme(isDarkMode: Boolean) {
@@ -714,11 +818,5 @@ class HomeActivity : AppCompatActivity() {
             .replace(R.id.main_content_container, workspaceInvitationsFragment)
             .addToBackStack(null)
             .commit()
-    }
-
-    private fun showCreateConversationFragment() {
-        // Cette méthode est maintenant remplacée par showConversationTypeDialog()
-        // Gardez-la pour compatibilité si elle est utilisée ailleurs, sinon supprimez-la
-        showConversationTypeDialog()
     }
 }

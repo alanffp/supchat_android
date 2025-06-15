@@ -1,41 +1,330 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#2f3136"
+    android:padding="24dp">
 
-    <TextView
+    <!-- En-tête du dialog -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nom d'utilisateur"
-        android:textSize="14sp"
-        android:textColor="#757575"
-        android:layout_marginBottom="4dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
 
-    <EditText
-        android:id="@+id/edit_username"
+        <!-- Icône profil -->
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_edit"
+            android:layout_marginEnd="12dp"
+            app:tint="#ff6b35"
+            android:background="#404040"
+            android:padding="6dp" />
+
+        <!-- Titre principal -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Modifier le profil"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#ffffff"
+            android:fontFamily="sans-serif-medium" />
+    </LinearLayout>
+
+    <!-- Section Avatar (optionnel) -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Votre nom d'utilisateur"
-        android:inputType="text"
-        android:maxLines="1"
-        android:layout_marginBottom="16dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#40444b"
+        android:padding="16dp"
+        android:layout_marginBottom="20dp">
 
-    <TextView
+        <!-- Avatar actuel -->
+        <ImageView
+            android:id="@+id/current_avatar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            android:background="#ff6b35"
+            android:padding="8dp"
+            android:layout_marginEnd="16dp"
+            app:tint="#ffffff" />
+
+        <!-- Info avatar -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Photo de profil"
+                android:textColor="#dcddde"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cliquez pour modifier"
+                android:textColor="#72767d"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Bouton modifier avatar -->
+        <ImageView
+            android:id="@+id/edit_avatar_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_camera"
+            app:tint="#72767d"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="4dp" />
+    </LinearLayout>
+
+    <!-- Section Nom d'utilisateur -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Email"
-        android:textSize="14sp"
-        android:textColor="#757575"
-        android:layout_marginBottom="4dp" />
+        android:orientation="vertical"
+        android:layout_marginBottom="20dp">
 
-    <EditText
-        android:id="@+id/edit_email"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="NOM D'UTILISATEUR"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#72767d"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/edit_username"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Votre nom d'utilisateur"
+            android:inputType="text"
+            android:maxLines="1"
+            android:textColor="#dcddde"
+            android:textColorHint="#72767d"
+            android:background="#40444b"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif" />
+
+        <!-- Info nom d'utilisateur -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Votre nom d'utilisateur doit être unique"
+            android:textColor="#72767d"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Section Email -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Votre adresse email"
-        android:inputType="textEmailAddress"
-        android:maxLines="1" />
+        android:orientation="vertical"
+        android:layout_marginBottom="20dp">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ADRESSE EMAIL"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#72767d"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/edit_email"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Votre adresse email"
+            android:inputType="textEmailAddress"
+            android:maxLines="1"
+            android:textColor="#dcddde"
+            android:textColorHint="#72767d"
+            android:background="#40444b"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif" />
+
+        <!-- Info email -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Utilisée pour la connexion et les notifications"
+            android:textColor="#72767d"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Section Statut (optionnel) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="STATUT PERSONNALISÉ"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#72767d"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/edit_status"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Que faites-vous en ce moment ?"
+            android:inputType="text"
+            android:maxLines="1"
+            android:textColor="#dcddde"
+            android:textColorHint="#72767d"
+            android:background="#40444b"
+            android:padding="12dp"
+            android:textSize="16sp"
+            android:fontFamily="sans-serif" />
+
+        <!-- Exemples de statut -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:id="@+id/status_online"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🟢 En ligne"
+                android:textColor="#72767d"
+                android:textSize="11sp"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/status_busy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔴 Occupé"
+                android:textColor="#72767d"
+                android:textSize="11sp"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="4dp"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/status_away"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🟡 Absent"
+                android:textColor="#72767d"
+                android:textSize="11sp"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Section Confidentialité -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#40444b"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CONFIDENTIALITÉ"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#72767d"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Option profil privé -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Profil privé"
+                android:textColor="#dcddde"
+                android:textSize="14sp" />
+
+            <Switch
+                android:id="@+id/switch_private_profile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:thumbTint="#ff6b35"
+                android:trackTint="#72767d" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Seuls vos amis peuvent voir votre profil"
+            android:textColor="#72767d"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp" />
+    </LinearLayout>
+
+    <!-- Boutons d'action -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <!-- Bouton Annuler -->
+        <Button
+            android:id="@+id/cancel_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Annuler"
+            android:textColor="#b9bbbe"
+            android:textSize="14sp"
+            android:background="?android:attr/selectableItemBackground"
+            android:padding="10dp"
+            android:layout_marginEnd="12dp"
+            android:minWidth="80dp" />
+
+        <!-- Bouton Sauvegarder -->
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="✓ Sauvegarder"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="#ff6b35"
+            android:padding="10dp"
+            android:minWidth="100dp"
+            android:elevation="2dp" />
+    </LinearLayout>
 </LinearLayout>

@@ -1,77 +1,401 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@color/colorPrimary">
+    android:background="#2f3136"
+    android:padding="0dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Inviter un participant"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Barre de recherche -->
+    <!-- Header du dialog -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@drawable/message_input_background"
-        android:padding="8dp"
-        android:layout_marginBottom="16dp">
+        android:gravity="center_vertical"
+        android:background="#36393f"
+        android:padding="20dp"
+        android:layout_marginBottom="24dp">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@android:drawable/ic_menu_search"
-            android:tint="#666666"
-            android:layout_gravity="center_vertical"
-            android:layout_marginEnd="8dp" />
-
-        <EditText
-            android:id="@+id/search_user_input"
+        <!-- Icône et titre -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Rechercher un utilisateur..."
-            android:textColorHint="#666666"
-            android:textColor="@android:color/black"
-            android:background="@android:color/transparent"
-            android:inputType="text"
-            android:imeOptions="actionSearch" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_add"
+                android:layout_marginEnd="12dp"
+                app:tint="#ff6b35" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Inviter des participants"
+                android:textColor="#ffffff"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <!-- Badge compteur participants -->
+        <LinearLayout
+            android:id="@+id/selected_count_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#40444b"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@android:drawable/ic_menu_agenda"
+                android:layout_marginEnd="4dp"
+                app:tint="#4CAF50" />
+
+            <TextView
+                android:id="@+id/selected_count_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 sélectionné"
+                android:textColor="#4CAF50"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 
-    <!-- Liste des utilisateurs trouvés -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/search_results_recycler_view"
+    <!-- Contenu principal -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="250dp"
-        android:background="#2C3E50"
-        android:padding="8dp" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="24dp">
 
-    <!-- Boutons d'action -->
+        <!-- Instructions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#40444b"
+            android:padding="12dp"
+            android:layout_marginBottom="20dp">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@android:drawable/ic_dialog_info"
+                android:layout_marginEnd="8dp"
+                app:tint="#2196F3" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recherchez et sélectionnez les utilisateurs à inviter"
+                android:textColor="#dcddde"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Section recherche -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RECHERCHER DES UTILISATEURS"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#72767d"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Barre de recherche moderne -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#40444b"
+                android:padding="12dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    android:layout_marginEnd="12dp"
+                    app:tint="#72767d" />
+
+                <EditText
+                    android:id="@+id/search_user_input"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Tapez un nom d'utilisateur..."
+                    android:textColor="#dcddde"
+                    android:textColorHint="#72767d"
+                    android:background="@null"
+                    android:textSize="16sp"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch"
+                    android:maxLines="1" />
+
+                <ImageView
+                    android:id="@+id/clear_search_button"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:padding="2dp"
+                    android:visibility="gone"
+                    app:tint="#72767d" />
+            </LinearLayout>
+
+            <!-- Info recherche -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Minimum 2 caractères pour lancer la recherche"
+                android:textColor="#72767d"
+                android:textSize="11sp"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- Section participants sélectionnés -->
+        <LinearLayout
+            android:id="@+id/selected_participants_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="PARTICIPANTS SÉLECTIONNÉS"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#72767d" />
+
+                <Button
+                    android:id="@+id/clear_selection_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="24dp"
+                    android:text="Effacer"
+                    android:textSize="10sp"
+                    android:textColor="#F44336"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:paddingHorizontal="8dp" />
+            </LinearLayout>
+
+            <!-- Liste horizontale des participants sélectionnés -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/selected_participants_recycler"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:background="#36393f"
+                android:padding="8dp"
+                android:scrollbars="horizontal" />
+        </LinearLayout>
+
+        <!-- Section résultats de recherche -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RÉSULTATS DE RECHERCHE"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#72767d"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Container pour les résultats avec états multiples -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="280dp"
+                android:background="#36393f">
+
+                <!-- Liste des résultats -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/search_results_recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="8dp"
+                    android:scrollbars="vertical" />
+
+                <!-- État initial -->
+                <LinearLayout
+                    android:id="@+id/search_initial_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_search"
+                        android:layout_marginBottom="12dp"
+                        app:tint="#72767d" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔍 Commencez à taper\npour rechercher des utilisateurs"
+                        android:textColor="#72767d"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="2dp" />
+                </LinearLayout>
+
+                <!-- État de chargement -->
+                <LinearLayout
+                    android:id="@+id/search_loading_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="gone">
+
+                    <ProgressBar
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:indeterminateTint="#ff6b35"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Recherche en cours..."
+                        android:textColor="#72767d"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- État aucun résultat -->
+                <LinearLayout
+                    android:id="@+id/search_no_results_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_menu_help"
+                        android:layout_marginBottom="12dp"
+                        app:tint="#72767d" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="😔 Aucun utilisateur trouvé\nEssayez avec un autre nom"
+                        android:textColor="#72767d"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="2dp" />
+                </LinearLayout>
+
+                <!-- État erreur -->
+                <LinearLayout
+                    android:id="@+id/search_error_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@android:drawable/ic_dialog_alert"
+                        android:layout_marginBottom="12dp"
+                        app:tint="#F44336" />
+
+                    <TextView
+                        android:id="@+id/search_error_message"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="❌ Erreur de recherche\nVérifiez votre connexion"
+                        android:textColor="#F44336"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:lineSpacingExtra="2dp" />
+
+                    <Button
+                        android:id="@+id/retry_search_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:text="🔄 Réessayer"
+                        android:textSize="12sp"
+                        android:textColor="#ffffff"
+                        android:background="#ff6b35"
+                        android:paddingHorizontal="16dp"
+                        android:layout_marginTop="12dp" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Footer avec boutons d'action -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="end"
-        android:layout_marginTop="16dp">
+        android:background="#36393f"
+        android:padding="16dp"
+        android:gravity="end">
 
+        <!-- Bouton Annuler -->
         <Button
             android:id="@+id/cancel_invite_button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
             android:text="Annuler"
-            android:textColor="@android:color/white"
-            android:background="@android:color/transparent"
-            android:layout_marginEnd="8dp" />
+            android:textColor="#b9bbbe"
+            android:textSize="14sp"
+            android:background="?android:attr/selectableItemBackground"
+            android:paddingHorizontal="20dp"
+            android:layout_marginEnd="12dp" />
 
+        <!-- Bouton Inviter -->
+        <Button
+            android:id="@+id/confirm_invite_button"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="✓ Inviter"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="#ff6b35"
+            android:paddingHorizontal="20dp"
+            android:enabled="false"
+            android:elevation="2dp" />
     </LinearLayout>
-
 </LinearLayout>

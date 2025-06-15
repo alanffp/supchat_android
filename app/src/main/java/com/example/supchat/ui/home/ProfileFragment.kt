@@ -15,6 +15,8 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -298,7 +300,6 @@ class ProfileFragment : Fragment() {
         statusText.text = "Non disponible"
     }
 
-    // ✅ CORRECTION: Nouvelle méthode d'upload avec ImageUtils
     private fun uploadProfilePictureNew(imageUri: Uri) {
         try {
             val preparedFile = ImageUtils.prepareImageForUpload(requireContext(), imageUri)
@@ -324,6 +325,8 @@ class ProfileFragment : Fragment() {
                 return
             }
 
+            displayImageImmediately(imageUri)
+
             ApiClient.updateProfilePicture(token, preparedFile)
                 .enqueue(object : Callback<PictureUpdateResponse> {
                     override fun onResponse(
@@ -337,21 +340,12 @@ class ProfileFragment : Fragment() {
                             if (updateResponse?.success == true) {
                                 showSuccess("Photo de profil mise à jour")
 
-                                // ✅ SOLUTION 1: Utiliser l'URL retournée par l'API
-                                val imageUrl = updateResponse.data?.profilePictureUrl
-                                    ?: updateResponse.data?.profilePictureUrlAlt
-                                imageUrl?.let { newUrl ->
-                                    ProfileImageManager.loadFromUrl(profileImage, newUrl)
-                                }
+                                refreshProfileImageMultipleWays(updateResponse, imageUri)
 
-                                // ✅ SOLUTION 2: Forcer le rechargement après un court délai
-                                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                    if (isAdded) {
-                                        loadUserProfile()
-                                    }
-                                }, 500) // Délai réduit à 500ms
                             } else {
                                 showError(updateResponse?.message ?: "Erreur lors de la mise à jour")
+                                // Recharger l'ancienne image en cas d'erreur
+                                loadUserProfile()
                             }
                         } else {
                             val errorBody = response.errorBody()?.string()
@@ -365,6 +359,8 @@ class ProfileFragment : Fragment() {
                             }
 
                             showError(errorMessage)
+                            // Recharger l'ancienne image en cas d'erreur
+                            loadUserProfile()
                         }
 
                         preparedFile.delete()
@@ -375,6 +371,9 @@ class ProfileFragment : Fragment() {
                         Log.e(TAG, "Erreur réseau", t)
                         showError("Erreur de connexion: ${t.message}")
                         preparedFile.delete()
+
+                        // Recharger l'ancienne image en cas d'erreur
+                        loadUserProfile()
                     }
                 })
 
@@ -384,8 +383,81 @@ class ProfileFragment : Fragment() {
             showLoading(false)
         }
     }
+    private fun displayImageImmediately(imageUri: Uri) {
+        try {
+            Glide.with(this)
+                .load(imageUri)
+                .apply(
+                    RequestOptions()
+                        .centerCrop()
+                        .skipMemoryCache(true) // ✅ Ignorer le cache mémoire
+                        .diskCacheStrategy(DiskCacheStrategy.NONE) // ✅ Ignorer le cache disque
+                )
+                .into(profileImage)
 
-    // ✅ SUPPRIMÉE: loadProfileImageFromUrl - remplacée par ProfileImageManager
+            Log.d(TAG, "Image locale affichée immédiatement")
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur affichage image locale", e)
+        }
+    }
+    private fun refreshProfileImageMultipleWays(updateResponse: PictureUpdateResponse, fallbackUri: Uri) {
+        try {
+            // Méthode 1: Utiliser l'URL retournée par l'API avec cache forcé
+            val imageUrl = updateResponse.data?.profilePictureUrl
+                ?: updateResponse.data?.profilePictureUrlAlt
+
+            if (!imageUrl.isNullOrEmpty()) {
+                Log.d(TAG, "Tentative de chargement URL: $imageUrl")
+
+                // Ajouter un timestamp pour forcer le rechargement
+                val urlWithTimestamp = if (imageUrl.contains("?")) {
+                    "$imageUrl&t=${System.currentTimeMillis()}"
+                } else {
+                    "$imageUrl?t=${System.currentTimeMillis()}"
+                }
+
+                loadImageWithForcedRefresh(urlWithTimestamp)
+
+                // Méthode 2: Rechargement du profil complet après délai
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (isAdded) {
+                        Log.d(TAG, "Rechargement profil complet...")
+                        loadUserProfile()
+                    }
+                }, 1000) // Délai augmenté à 1 seconde
+
+            } else {
+                Log.w(TAG, "Aucune URL d'image retournée, utilisation de l'image locale")
+                // Garder l'image locale si pas d'URL du serveur
+                displayImageImmediately(fallbackUri)
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur lors du rafraîchissement", e)
+        }
+    }
+    private fun loadImageWithForcedRefresh(imageUrl: String) {
+        try {
+            // Vider le cache pour cette image spécifiquement
+            Glide.with(this).clear(profileImage)
+
+            // Recharger avec options de cache désactivées
+            Glide.with(this)
+                .load(imageUrl)
+                .apply(
+                    RequestOptions()
+                        .centerCrop()
+                        .skipMemoryCache(true) // ✅ Ignorer le cache mémoire
+                        .diskCacheStrategy(DiskCacheStrategy.NONE) // ✅ Ignorer le cache disque
+                        .signature(com.bumptech.glide.signature.ObjectKey(System.currentTimeMillis())) // ✅ Signature unique
+                )
+                .into(profileImage)
+
+            Log.d(TAG, "Image rechargée avec cache forcé")
+        } catch (e: Exception) {
+            Log.e(TAG, "Erreur chargement image forcé", e)
+        }
+    }
 
     private fun showLoading(show: Boolean) {
         // Option 1: Utiliser le ProgressBar si présent dans le layout
@@ -625,65 +697,284 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showEditProfileDialog() {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_edit_profile, null)
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_edit_profile, null)
+
+        // Récupérer les champs du layout stylisé
         val usernameEditText = dialogView.findViewById<EditText>(R.id.edit_username)
         val emailEditText = dialogView.findViewById<EditText>(R.id.edit_email)
+        val statusEditText = dialogView.findViewById<EditText>(R.id.edit_status)
 
+        // Récupérer les boutons stylisés du XML
+        val cancelButton = dialogView.findViewById<Button>(R.id.cancel_button)
+        val saveButton = dialogView.findViewById<Button>(R.id.save_button)
+
+        // Pré-remplir les champs avec les données actuelles
         usernameEditText.setText(usernameText.text)
         emailEditText.setText(emailText.text)
+        statusEditText?.setText(statusText.text) // Optionnel si présent dans le layout
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Modifier le profil")
+        // Créer le dialog sans boutons par défaut
+        val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogView)
-            .setPositiveButton("Enregistrer") { _, _ ->
-                val newUsername = usernameEditText.text.toString()
-                val newEmail = emailEditText.text.toString()
+            .setCancelable(true)
+            .create()
 
-                if (newUsername.isBlank() || newEmail.isBlank()) {
-                    Toast.makeText(context, "Tous les champs sont obligatoires", Toast.LENGTH_SHORT)
-                        .show()
-                    return@setPositiveButton
+        // Configuration des boutons personnalisés
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        saveButton.setOnClickListener {
+            val newUsername = usernameEditText.text.toString().trim()
+            val newEmail = emailEditText.text.toString().trim()
+
+            // Validation des champs
+            when {
+                newUsername.isEmpty() -> {
+                    Toast.makeText(context, "Le nom d'utilisateur ne peut pas être vide", Toast.LENGTH_SHORT).show()
+                    usernameEditText.requestFocus()
+                    return@setOnClickListener
                 }
-
-                updateUserProfile(newUsername, newEmail)
+                newEmail.isEmpty() -> {
+                    Toast.makeText(context, "L'adresse email ne peut pas être vide", Toast.LENGTH_SHORT).show()
+                    emailEditText.requestFocus()
+                    return@setOnClickListener
+                }
+                !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches() -> {
+                    Toast.makeText(context, "Veuillez saisir une adresse email valide", Toast.LENGTH_SHORT).show()
+                    emailEditText.requestFocus()
+                    return@setOnClickListener
+                }
+                newUsername.length < 3 -> {
+                    Toast.makeText(context, "Le nom d'utilisateur doit contenir au moins 3 caractères", Toast.LENGTH_SHORT).show()
+                    usernameEditText.requestFocus()
+                    return@setOnClickListener
+                }
+                newUsername == usernameText.text.toString() && newEmail == emailText.text.toString() -> {
+                    Toast.makeText(context, "Aucune modification détectée", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                else -> {
+                    // Tout est valide, procéder à la mise à jour
+                    updateUserProfile(newUsername, newEmail)
+                    dialog.dismiss()
+                }
             }
-            .setNegativeButton("Annuler", null)
-            .show()
+        }
+
+        // Optionnel : Ajouter la validation en temps réel
+        setupProfileValidationOptional(dialogView)
+
+        // Optionnel : Gérer les boutons de statut prédéfinis si présents
+        setupStatusButtonsOptional(dialogView)
+
+        dialog.show()
     }
 
-    private fun showChangePasswordDialog() {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_change_password, null)
-        val currentPasswordEditText = dialogView.findViewById<EditText>(R.id.current_password)
-        val newPasswordEditText = dialogView.findViewById<EditText>(R.id.new_password)
-        val confirmPasswordEditText = dialogView.findViewById<EditText>(R.id.confirm_password)
+    private fun setupProfileValidationOptional(dialogView: View) {
+        val usernameEditText = dialogView.findViewById<EditText>(R.id.edit_username)
+        val emailEditText = dialogView.findViewById<EditText>(R.id.edit_email)
+        val saveButton = dialogView.findViewById<Button>(R.id.save_button)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Changer le mot de passe")
-            .setView(dialogView)
-            .setPositiveButton("Enregistrer") { _, _ ->
-                val currentPassword = currentPasswordEditText.text.toString()
-                val newPassword = newPasswordEditText.text.toString()
-                val confirmPassword = confirmPasswordEditText.text.toString()
+        val profileWatcher = object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val username = usernameEditText.text.toString().trim()
+                val email = emailEditText.text.toString().trim()
 
-                if (currentPassword.isBlank() || newPassword.isBlank() || confirmPassword.isBlank()) {
-                    Toast.makeText(context, "Tous les champs sont obligatoires", Toast.LENGTH_SHORT)
-                        .show()
-                    return@setPositiveButton
+                // Vérifier la validité des champs
+                val isUsernameValid = username.length >= 3
+                val isEmailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                val hasChanges = username != usernameText.text.toString() ||
+                        email != emailText.text.toString()
+
+                val isValid = isUsernameValid && isEmailValid && hasChanges
+
+                // Activer/désactiver le bouton de sauvegarde
+                saveButton.isEnabled = isValid
+
+                // Changer la couleur du bouton selon l'état
+                if (isValid) {
+                    saveButton.setBackgroundColor(android.graphics.Color.parseColor("#ff6b35"))
+                } else {
+                    saveButton.setBackgroundColor(android.graphics.Color.parseColor("#72767d"))
                 }
-
-                if (newPassword != confirmPassword) {
-                    Toast.makeText(
-                        context,
-                        "Les mots de passe ne correspondent pas",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    return@setPositiveButton
-                }
-
-                updateUserPassword(currentPassword, newPassword, confirmPassword)
             }
-            .setNegativeButton("Annuler", null)
-            .show()
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        }
+
+        usernameEditText.addTextChangedListener(profileWatcher)
+        emailEditText.addTextChangedListener(profileWatcher)
+    }
+
+    // Méthode optionnelle pour gérer les boutons de statut prédéfinis
+    private fun setupStatusButtonsOptional(dialogView: View) {
+        val statusEditText = dialogView.findViewById<EditText>(R.id.edit_status)
+        val statusOnline = dialogView.findViewById<TextView>(R.id.status_online)
+        val statusBusy = dialogView.findViewById<TextView>(R.id.status_busy)
+        val statusAway = dialogView.findViewById<TextView>(R.id.status_away)
+
+        // Vérifier que les éléments existent dans le layout
+        if (statusEditText == null) return
+
+        statusOnline?.setOnClickListener {
+            statusEditText.setText("En ligne")
+        }
+
+        statusBusy?.setOnClickListener {
+            statusEditText.setText("Occupé")
+        }
+
+        statusAway?.setOnClickListener {
+            statusEditText.setText("Absent")
+        }
+    }
+    private fun showChangePasswordDialog() {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_change_password, null)
+
+        // Récupérer les champs du nouveau layout stylisé
+        val currentPasswordInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.current_password)
+        val newPasswordInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.new_password)
+        val confirmPasswordInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.confirm_password)
+
+        // Récupérer les boutons stylisés
+        val cancelButton = dialogView.findViewById<Button>(R.id.cancel_button)
+        val confirmButton = dialogView.findViewById<Button>(R.id.confirm_button)
+
+        // Créer le dialog sans boutons par défaut
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        // Configuration des boutons personnalisés
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        confirmButton.setOnClickListener {
+            val currentPassword = currentPasswordInput.text.toString().trim()
+            val newPassword = newPasswordInput.text.toString().trim()
+            val confirmPassword = confirmPasswordInput.text.toString().trim()
+
+            // Validation des champs
+            when {
+                currentPassword.isEmpty() -> {
+                    Toast.makeText(context, "Veuillez saisir votre mot de passe actuel", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                newPassword.isEmpty() -> {
+                    Toast.makeText(context, "Veuillez saisir un nouveau mot de passe", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                confirmPassword.isEmpty() -> {
+                    Toast.makeText(context, "Veuillez confirmer votre nouveau mot de passe", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                newPassword.length < 8 -> {
+                    Toast.makeText(context, "Le nouveau mot de passe doit contenir au moins 8 caractères", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                newPassword != confirmPassword -> {
+                    Toast.makeText(context, "Les mots de passe ne correspondent pas", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                currentPassword == newPassword -> {
+                    Toast.makeText(context, "Le nouveau mot de passe doit être différent de l'ancien", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                else -> {
+                    // Tout est valide, procéder à la mise à jour
+                    updateUserPassword(currentPassword, newPassword, confirmPassword)
+                    dialog.dismiss()
+                }
+            }
+        }
+
+        // Optionnel : Ajouter la validation en temps réel
+        setupPasswordValidationOptional(dialogView)
+
+        dialog.show()
+    }
+    private fun setupPasswordValidationOptional(dialogView: View) {
+        val newPasswordInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.new_password)
+        val confirmPasswordInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.confirm_password)
+        val confirmButton = dialogView.findViewById<Button>(R.id.confirm_button)
+
+        val passwordWatcher = object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val newPassword = newPasswordInput.text.toString()
+                val confirmPassword = confirmPasswordInput.text.toString()
+
+                // Activer/désactiver le bouton selon la validation
+                updateConfirmButtonState(dialogView, newPassword, confirmPassword)
+
+                // Optionnel : Afficher les indicateurs visuels si présents
+                updatePasswordMatchIndicator(dialogView, newPassword, confirmPassword)
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        }
+
+        newPasswordInput.addTextChangedListener(passwordWatcher)
+        confirmPasswordInput.addTextChangedListener(passwordWatcher)
+    }
+    private fun updatePasswordMatchIndicator(dialogView: View, newPassword: String, confirmPassword: String) {
+        // Cette méthode utilise les indicateurs visuels du nouveau layout si présents
+        val matchIndicator = dialogView.findViewById<LinearLayout>(R.id.password_match_indicator)
+        val matchIcon = dialogView.findViewById<ImageView>(R.id.match_icon)
+        val matchText = dialogView.findViewById<TextView>(R.id.match_text)
+
+        // Vérifier que les vues existent (au cas où le layout n'aurait pas tous les éléments)
+        if (matchIndicator == null || matchIcon == null || matchText == null) {
+            return
+        }
+
+        if (confirmPassword.isEmpty()) {
+            matchIndicator.visibility = View.GONE
+            return
+        }
+
+        matchIndicator.visibility = View.VISIBLE
+
+        if (newPassword == confirmPassword) {
+            matchIcon.setImageResource(android.R.drawable.ic_menu_share)
+            matchIcon.imageTintList = android.content.res.ColorStateList.valueOf(
+                android.graphics.Color.parseColor("#4CAF50")
+            )
+            matchText.text = "Identique"
+            matchText.setTextColor(android.graphics.Color.parseColor("#4CAF50"))
+        } else {
+            matchIcon.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            matchIcon.imageTintList = android.content.res.ColorStateList.valueOf(
+                android.graphics.Color.parseColor("#F44336")
+            )
+            matchText.text = "Différent"
+            matchText.setTextColor(android.graphics.Color.parseColor("#F44336"))
+        }
+    }
+
+    private fun updateConfirmButtonState(dialogView: View, newPassword: String, confirmPassword: String) {
+        val currentPasswordInput = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.current_password)
+        val confirmButton = dialogView.findViewById<Button>(R.id.confirm_button)
+
+        val currentPassword = currentPasswordInput.text.toString()
+
+        val isValid = currentPassword.isNotEmpty() &&
+                newPassword.length >= 8 &&
+                newPassword == confirmPassword &&
+                newPassword != currentPassword
+
+        confirmButton.isEnabled = isValid
+
+        // Changer la couleur du bouton selon l'état
+        if (isValid) {
+            confirmButton.setBackgroundColor(android.graphics.Color.parseColor("#ff6b35"))
+        } else {
+            confirmButton.setBackgroundColor(android.graphics.Color.parseColor("#72767d"))
+        }
     }
 
     private fun updateUserProfile(username: String, email: String) {
@@ -836,23 +1127,107 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showDeleteAccountConfirmation() {
-        val view = LayoutInflater.from(context).inflate(R.layout.dialog_confirm_delete_account, null)
-        val passwordEditText = view.findViewById<EditText>(R.id.password_edit_text)
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_confirm_delete_account, null)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Supprimer le compte")
-            .setMessage("Cette action est irréversible. Pour confirmer, veuillez entrer votre mot de passe.")
-            .setView(view)
-            .setPositiveButton("Supprimer") { _, _ ->
-                val password = passwordEditText.text.toString()
-                if (password.isEmpty()) {
-                    Toast.makeText(context, "Veuillez entrer votre mot de passe", Toast.LENGTH_SHORT).show()
-                } else {
-                    deleteUserAccount(password)
+        // Récupérer les éléments du nouveau layout
+        val passwordEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.password_edit_text)
+        val finalConfirmationCheckbox = dialogView.findViewById<android.widget.CheckBox>(R.id.final_confirmation_checkbox)
+        val cancelButton = dialogView.findViewById<Button>(R.id.cancel_delete_button)
+        val confirmButton = dialogView.findViewById<Button>(R.id.confirm_delete_button)
+
+        // Créer le dialog sans boutons par défaut
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        // Configuration des boutons personnalisés
+        cancelButton.setOnClickListener {
+            Log.d(TAG, "Suppression annulée par l'utilisateur")
+            dialog.dismiss()
+        }
+
+        confirmButton.setOnClickListener {
+            val password = passwordEditText.text.toString().trim()
+
+            // Validation finale
+            when {
+                password.isEmpty() -> {
+                    Toast.makeText(context, "Veuillez saisir votre mot de passe", Toast.LENGTH_SHORT).show()
+                    passwordEditText.requestFocus()
+                    return@setOnClickListener
+                }
+                !finalConfirmationCheckbox.isChecked -> {
+                    Toast.makeText(context, "Veuillez confirmer que vous comprenez les conséquences", Toast.LENGTH_LONG).show()
+                    return@setOnClickListener
+                }
+                password.length < 6 -> {
+                    Toast.makeText(context, "Le mot de passe semble trop court", Toast.LENGTH_SHORT).show()
+                    passwordEditText.requestFocus()
+                    return@setOnClickListener
+                }
+                else -> {
+                    // Dernière confirmation avant suppression
+                    showFinalDeleteConfirmation(password, dialog)
                 }
             }
-            .setNegativeButton("Annuler", null)
+        }
+
+        // Configuration de la validation en temps réel
+        setupDeleteValidation(dialogView)
+
+        dialog.show()
+    }
+    private fun setupDeleteValidation(dialogView: View) {
+        val passwordEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.password_edit_text)
+        val finalConfirmationCheckbox = dialogView.findViewById<android.widget.CheckBox>(R.id.final_confirmation_checkbox)
+        val confirmButton = dialogView.findViewById<Button>(R.id.confirm_delete_button)
+
+        val updateButtonState = {
+            val hasPassword = passwordEditText.text.toString().trim().isNotEmpty()
+            val hasConfirmation = finalConfirmationCheckbox.isChecked
+            val isValid = hasPassword && hasConfirmation
+
+            confirmButton.isEnabled = isValid
+
+            // Changer la couleur du bouton selon l'état
+            if (isValid) {
+                confirmButton.setBackgroundColor(android.graphics.Color.parseColor("#F44336"))
+                confirmButton.alpha = 1.0f
+            } else {
+                confirmButton.setBackgroundColor(android.graphics.Color.parseColor("#72767d"))
+                confirmButton.alpha = 0.6f
+            }
+        }
+
+        // Watchers pour la validation temps réel
+        passwordEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun afterTextChanged(s: android.text.Editable?) { updateButtonState() }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
+        finalConfirmationCheckbox.setOnCheckedChangeListener { _, _ ->
+            updateButtonState()
+        }
+
+        // État initial
+        updateButtonState()
+    }
+    private fun showFinalDeleteConfirmation(password: String, parentDialog: AlertDialog) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("⚠️ Dernière confirmation")
+            .setMessage("Êtes-vous absolument certain(e) de vouloir supprimer définitivement votre compte ?\n\nCette action est IRRÉVERSIBLE.")
+            .setPositiveButton("OUI, SUPPRIMER") { _, _ ->
+                parentDialog.dismiss()
+                deleteUserAccount(password)
+            }
+            .setNegativeButton("Non, annuler") { _, _ ->
+                // Garder le dialog principal ouvert
+            }
             .setIcon(android.R.drawable.ic_dialog_alert)
+            .setCancelable(false)
             .show()
     }
 

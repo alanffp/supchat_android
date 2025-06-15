@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.RadioGroup
+import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.supchat.R
@@ -37,35 +38,61 @@ class WelcomeFragment : Fragment() {
     }
 
     private fun showCreateWorkspaceDialog() {
-        // Créer un dialogue pour saisir les informations du workspace
+        // Créer un dialogue personnalisé avec le nouveau layout stylisé
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_create_workspace, null)
+
+        // ✅ IMPORTANT: Récupérer les références des vues (ce qui manquait dans votre code)
         val nameEditText = dialogView.findViewById<EditText>(R.id.edit_workspace_name)
         val descriptionEditText = dialogView.findViewById<EditText>(R.id.edit_workspace_description)
         val visibilityRadioGroup = dialogView.findViewById<RadioGroup>(R.id.visibility_radio_group)
+        val createButton = dialogView.findViewById<Button>(R.id.create_button)
+        val cancelButton = dialogView.findViewById<Button>(R.id.cancel_button)
 
-        AlertDialog.Builder(requireContext())
-            .setTitle("Créer un workspace")
+        // Créer le dialog sans titre et boutons par défaut
+        val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogView)
-            .setPositiveButton("Créer") { _, _ ->
-                val name = nameEditText.text.toString().trim()
-                val description = descriptionEditText.text.toString().trim().let {
-                    if (it.isEmpty()) null else it
-                }
+            .setCancelable(true)
+            .create()
 
-                // Déterminer la visibilité selon le bouton radio sélectionné
-                val visibility = when (visibilityRadioGroup.checkedRadioButtonId) {
-                    R.id.visibility_private -> "private"
-                    else -> "public"
-                }
+        // Rendre le fond du dialog transparent pour utiliser notre style personnalisé
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-                if (name.isNotEmpty()) {
-                    createWorkspace(name, description, visibility)
-                } else {
-                    Toast.makeText(context, "Le nom ne peut pas être vide", Toast.LENGTH_SHORT).show()
-                }
+        // Configurer le bouton Créer
+        createButton.setOnClickListener {
+            val name = nameEditText.text.toString().trim()
+            val description = descriptionEditText.text.toString().trim().let {
+                if (it.isEmpty()) null else it
             }
-            .setNegativeButton("Annuler", null)
-            .show()
+
+            // Déterminer la visibilité selon le bouton radio sélectionné
+            val visibility = when (visibilityRadioGroup.checkedRadioButtonId) {
+                R.id.visibility_private -> "private"
+                else -> "public"
+            }
+
+            if (name.isNotEmpty()) {
+                dialog.dismiss()
+                createWorkspace(name, description, visibility)
+            } else {
+                // Animation de shake pour le champ nom vide
+                nameEditText.error = "Le nom ne peut pas être vide"
+                nameEditText.requestFocus()
+
+                // Animation de vibration visuelle
+                val shake = android.view.animation.TranslateAnimation(-10f, 10f, 0f, 0f)
+                shake.duration = 50
+                shake.repeatCount = 3
+                nameEditText.startAnimation(shake)
+            }
+        }
+
+        // Configurer le bouton Annuler
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // Afficher le dialog
+        dialog.show()
     }
 
     private fun createWorkspace(name: String, description: String? = null, visibility: String) {
@@ -95,6 +122,8 @@ class WelcomeFragment : Fragment() {
                         Toast.makeText(context, "Workspace créé avec succès", Toast.LENGTH_SHORT).show()
                         // Rafraîchir la liste des workspaces
                         (activity as? HomeActivity)?.refreshWorkspaces()
+                    } else {
+                        Toast.makeText(context, "Erreur lors de la création: ${response.code()}", Toast.LENGTH_SHORT).show()
                     }
                 }
 

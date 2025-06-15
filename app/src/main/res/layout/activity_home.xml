@@ -25,30 +25,35 @@
 
             <!-- Logo et titre -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="155dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <!-- Logo SupChat -->
                 <ImageView
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:src="@mipmap/ic_launcher_foreground"
+                    android:layout_marginEnd="12dp"
                     android:background="#ffffff"
                     android:padding="4dp"
-                    android:layout_marginEnd="12dp" />
+                    android:src="@mipmap/ic_launcher_foreground" />
 
                 <!-- Titre de l'app -->
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:id="@+id/supchat_title"
+                    android:layout_width="117dp"
                     android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:fontFamily="sans-serif-medium"
+                    android:padding="1dp"
                     android:text="SupChat"
                     android:textColor="#ffffff"
                     android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:fontFamily="sans-serif-medium" />
+                    android:textStyle="bold" />
             </LinearLayout>
 
             <!-- Boutons d'action -->

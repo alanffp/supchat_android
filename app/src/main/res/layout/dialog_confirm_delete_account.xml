@@ -1,24 +1,319 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#2f3136"
+    android:padding="0dp">
 
-    <TextView
+    <!-- Header critique du dialog -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Pour des raisons de sécurité, veuillez entrer votre mot de passe actuel pour confirmer la suppression."
-        android:textColor="@android:color/black"
-        android:layout_marginBottom="16dp"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#F44336"
+        android:padding="20dp"
+        android:layout_marginBottom="24dp">
 
-    <EditText
-        android:id="@+id/password_edit_text"
+        <!-- Icône d'alerte -->
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@android:drawable/ic_dialog_alert"
+            android:layout_marginEnd="12dp"
+            app:tint="#ffffff" />
+
+        <!-- Titre d'alerte -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Supprimer le compte"
+                android:textColor="#ffffff"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Action irréversible"
+                android:textColor="#ffcdd2"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- Badge de danger -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#D32F2F"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@android:drawable/ic_delete"
+                android:layout_marginEnd="4dp"
+                app:tint="#ffffff" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DANGER"
+                android:textColor="#ffffff"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Contenu principal -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Mot de passe actuel"
-        android:inputType="textPassword"
-        android:backgroundTint="#FF3B30"/>
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingBottom="24dp">
 
+        <!-- Avertissement principal -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#40444b"
+            android:padding="16dp"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:layout_marginEnd="8dp"
+                    app:tint="#FFC107" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Attention : Cette action est définitive"
+                    android:textColor="#FFC107"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="La suppression de votre compte entraînera :\n\n• Perte définitive de toutes vos données\n• Suppression de tous vos messages\n• Perte de votre historique de conversations\n• Impossible de récupérer votre compte"
+                android:textColor="#dcddde"
+                android:textSize="14sp"
+                android:lineSpacingExtra="3dp" />
+        </LinearLayout>
+
+        <!-- Section confirmation par mot de passe -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="CONFIRMATION REQUISE"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#72767d" />
+
+                <!-- Indicateur de sécurité -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="#40444b"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp">
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:src="@android:drawable/ic_secure"
+                        android:layout_marginEnd="4dp"
+                        app:tint="#4CAF50" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sécurisé"
+                        android:textColor="#4CAF50"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:boxBackgroundColor="#40444b"
+                app:boxBackgroundMode="filled"
+                app:hintTextColor="#72767d"
+                app:boxStrokeColor="#F44336"
+                app:boxStrokeWidth="2dp"
+                app:passwordToggleEnabled="true"
+                app:passwordToggleTint="#72767d"
+                app:endIconMode="password_toggle">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/password_edit_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Saisissez votre mot de passe actuel"
+                    android:textColor="#dcddde"
+                    android:textColorHint="#72767d"
+                    android:inputType="textPassword"
+                    android:maxLines="1"
+                    android:textSize="16sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Message d'aide -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pour des raisons de sécurité, nous devons vérifier votre identité"
+                android:textColor="#72767d"
+                android:textSize="12sp"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- Section de réflexion -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#36393f"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:layout_marginEnd="8dp"
+                    app:tint="#2196F3" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Alternatives à considérer"
+                    android:textColor="#2196F3"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Se déconnecter temporairement\n• Changer votre mot de passe\n• Modifier vos paramètres de confidentialité\n• Contacter notre support pour assistance"
+                android:textColor="#b9bbbe"
+                android:textSize="12sp"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+
+        <!-- Checkbox de confirmation finale -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#40444b"
+            android:padding="12dp"
+            android:layout_marginBottom="24dp">
+
+            <CheckBox
+                android:id="@+id/final_confirmation_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="#F44336"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Je comprends que cette action est irréversible et que toutes mes données seront définitivement perdues"
+                android:textColor="#dcddde"
+                android:textSize="13sp"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Footer avec boutons d'action -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#36393f"
+        android:padding="16dp"
+        android:gravity="end">
+
+        <!-- Bouton Annuler (recommandé) -->
+        <Button
+            android:id="@+id/cancel_delete_button"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="✓ Annuler"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="#4CAF50"
+            android:paddingHorizontal="24dp"
+            android:layout_marginEnd="12dp"
+            android:elevation="2dp" />
+
+        <!-- Bouton Supprimer (dangereux) -->
+        <Button
+            android:id="@+id/confirm_delete_button"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="🗑️ Supprimer"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:background="#F44336"
+            android:paddingHorizontal="24dp"
+            android:enabled="false"
+            android:elevation="2dp" />
+    </LinearLayout>
 </LinearLayout>

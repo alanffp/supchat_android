@@ -42,14 +42,16 @@ class NotificationService private constructor() {
     private var currentNotifications = mutableListOf<Notification>()
 
     // Charger toutes les notifications
-    fun loadNotifications(context: Context) {
+    fun loadNotifications(context: Context, forceRefresh: Boolean = false) {
         val token = getAuthToken(context)
         if (token.isEmpty()) {
             Log.e(TAG, "Token manquant pour charger les notifications")
             return
         }
 
-        Log.d(TAG, "Chargement des notifications...")
+        Log.d(TAG, "=== DÉBUT CHARGEMENT NOTIFICATIONS ===")
+        Log.d(TAG, "Token présent: ${token.take(20)}...")
+        Log.d(TAG, "Force refresh: $forceRefresh")
 
         ApiClient.getNotifications(token)
             .enqueue(object : Callback<NotificationsResponse> {
@@ -57,26 +59,54 @@ class NotificationService private constructor() {
                     call: Call<NotificationsResponse>,
                     response: Response<NotificationsResponse>
                 ) {
+                    Log.d(TAG, "=== RÉPONSE NOTIFICATIONS ===")
+                    Log.d(TAG, "Code de réponse: ${response.code()}")
+                    Log.d(TAG, "URL appelée: ${call.request().url}")
+
                     if (response.isSuccessful) {
                         val notificationsResponse = response.body()
+                        Log.d(TAG, "Body reçu: $notificationsResponse")
+
                         val notifications = notificationsResponse?.data?.notifications ?: emptyList()
+                        Log.d(TAG, "Nombre de notifications: ${notifications.size}")
+
+                        // Analyser les types de notifications
+                        notifications.forEach { notification ->
+                            Log.d(TAG, "Notification: id=${notification.id}, type=${notification.type}, onModel=${notification.onModel}, message=${notification.message}, lu=${notification.lu}")
+
+                            // Vérifier spécifiquement les messages privés
+                            if (notification.isPrivateMessage()) {
+                                Log.d(TAG, "✅ Message privé détecté: ${notification.message}")
+                            }
+                        }
 
                         currentNotifications.clear()
                         currentNotifications.addAll(notifications)
-
                         updateLiveData()
 
-                        Log.d(TAG, "Notifications chargées: ${notifications.size}")
+                        Log.d(TAG, "✅ Notifications chargées: ${notifications.size} total")
+                        Log.d(TAG, "Messages privés: ${notifications.count { it.isPrivateMessage() }}")
+                        Log.d(TAG, "Non lues: ${notifications.count { !it.lu }}")
+
                     } else {
-                        Log.e(TAG, "Erreur chargement notifications: ${response.code()}")
+                        val errorBody = response.errorBody()?.string()
+                        Log.e(TAG, "❌ Erreur chargement notifications: ${response.code()}")
+                        Log.e(TAG, "Error body: $errorBody")
+                        Log.e(TAG, "Headers: ${response.headers()}")
                     }
+
+                    Log.d(TAG, "=== FIN CHARGEMENT NOTIFICATIONS ===")
                 }
 
                 override fun onFailure(call: Call<NotificationsResponse>, t: Throwable) {
-                    Log.e(TAG, "Erreur réseau notifications", t)
+                    Log.e(TAG, "❌ ERREUR RÉSEAU notifications", t)
+                    Log.e(TAG, "URL: ${call.request().url}")
+                    Log.e(TAG, "Message: ${t.message}")
+                    Log.e(TAG, "Cause: ${t.cause}")
                 }
             })
     }
+
 
     // Marquer une notification comme lue
     fun markAsRead(context: Context, notificationId: String) {

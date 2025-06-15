@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#36393f">
+
+    <!-- Header moderne -->
+    <LinearLayout
+        android:id="@+id/header_notifications"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="#2f3136"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:elevation="4dp">
+
+        <!-- Icône et titre -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_popup_reminder"
+                android:layout_marginEnd="12dp"
+                app:tint="#ff6b35" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Notifications"
+                android:textColor="#ffffff"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+
+        <!-- Compteur de notifications non lues -->
+        <LinearLayout
+            android:id="@+id/unread_count_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="#40444b"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:layout_marginEnd="8dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/unread_count_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textColor="#ff6b35"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" non lues"
+                android:textColor="#b9bbbe"
+                android:textSize="10sp"
+                android:layout_marginStart="2dp" />
+        </LinearLayout>
+
+        <!-- Menu options -->
+        <ImageView
+            android:id="@+id/menu_notifications"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            app:tint="#b9bbbe"
+            android:contentDescription="Options" />
+    </LinearLayout>
+
+    <!-- Filtres rapides (optionnel) -->
+    <LinearLayout
+        android:id="@+id/filter_bar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="64dp"
+        android:orientation="horizontal"
+        android:background="#40444b"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/filter_all"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Toutes"
+            android:textColor="#dcddde"
+            android:textSize="12sp"
+            android:textAlignment="center"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/filter_unread"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Non lues"
+            android:textColor="#dcddde"
+            android:textSize="12sp"
+            android:textAlignment="center"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/filter_private"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Messages"
+            android:textColor="#dcddde"
+            android:textSize="12sp"
+            android:textAlignment="center"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackground" />
+    </LinearLayout>
+
+    <!-- Contenu principal avec SwipeRefreshLayout -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_notifications"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="64dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <!-- Liste des notifications -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_notifications"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="vertical"
+                android:clipToPadding="false"
+                android:paddingBottom="80dp"
+                android:background="#36393f" />
+
+            <!-- État vide stylisé -->
+            <LinearLayout
+                android:id="@+id/empty_state_notifications"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@android:drawable/ic_popup_reminder"
+                    android:layout_marginBottom="16dp"
+                    app:tint="#72767d" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Aucune notification"
+                    android:textColor="#dcddde"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Vous n'avez aucune notification pour le moment.\nLes nouvelles notifications apparaîtront ici."
+                    android:textColor="#72767d"
+                    android:textSize="14sp"
+                    android:textAlignment="center"
+                    android:lineSpacingExtra="2dp" />
+
+                <!-- Bouton pour rafraîchir -->
+                <Button
+                    android:id="@+id/refresh_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="🔄 Actualiser"
+                    android:textColor="#ffffff"
+                    android:textSize="14sp"
+                    android:background="#ff6b35"
+                    android:paddingHorizontal="20dp"
+                    android:layout_marginTop="16dp" />
+            </LinearLayout>
+
+            <!-- Indicateur de chargement stylisé -->
+            <LinearLayout
+                android:id="@+id/loading_state"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#36393f"
+                android:visibility="gone">
+
+                <ProgressBar
+                    android:id="@+id/progress_notifications"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:indeterminateTint="#ff6b35"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chargement des notifications..."
+                    android:textColor="#dcddde"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <!-- État d'erreur -->
+            <LinearLayout
+                android:id="@+id/error_state"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@android:drawable/ic_dialog_alert"
+                    android:layout_marginBottom="16dp"
+                    app:tint="#F44336" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Erreur de chargement"
+                    android:textColor="#F44336"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/error_message"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Impossible de charger les notifications.\nVérifiez votre connexion."
+                    android:textColor="#72767d"
+                    android:textSize="14sp"
+                    android:textAlignment="center"
+                    android:lineSpacingExtra="2dp"
+                    android:layout_marginBottom="16dp" />
+
+                <Button
+                    android:id="@+id/retry_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="🔄 Réessayer"
+                    android:textColor="#ffffff"
+                    android:textSize="14sp"
+                    android:background="#ff6b35"
+                    android:paddingHorizontal="20dp" />
+            </LinearLayout>
+        </FrameLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Bouton flottant pour marquer toutes comme lues -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_mark_all_read"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_menu_view"
+        android:contentDescription="Marquer toutes comme lues"
+        app:backgroundTint="#ff6b35"
+        app:tint="#ffffff"
+        android:visibility="gone" />
+
+    <!-- Bouton secondaire pour actualiser -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_refresh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="80dp"
+        android:src="@android:drawable/ic_menu_rotate"
+        android:contentDescription="Actualiser"
+        app:backgroundTint="#2196F3"
+        app:tint="#ffffff"
+        app:fabSize="mini" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
