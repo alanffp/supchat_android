@@ -2,7 +2,8 @@ package com.example.supchat.api
 
 import com.example.supchat.api.deserializer.SafeConversationDetailsResponseDeserializer
 import com.example.supchat.api.deserializer.SafeConversationMessagesResponseDeserializer
-import com.example.supchat.api.deserializer.SafeConversationsResponseDeserializer
+import com.example.supchat.api.deserializer.SafeNotificationCountResponseDeserializer
+import com.example.supchat.api.deserializer.SafeNotificationsResponseDeserializer
 import com.example.supchat.api.deserializer.SafePrivateMessagesResponseDeserializer
 import com.example.supchat.models.request.AccountDeleteRequest
 import com.example.supchat.models.request.AddParticipantRequest
@@ -58,20 +59,12 @@ object ApiClient {
     private const val BASE_URL = "http://10.0.2.2:3000"
 
     val instance: ApiService by lazy {
-        // ✅ CORRECTION : Enregistrer TOUS les deserializers
+        // ✅ Configuration Gson avec tous les désérialiseurs
         val gson = GsonBuilder()
             .setLenient()
             .registerTypeAdapter(
                 ConversationMessagesResponse::class.java,
                 SafeConversationMessagesResponseDeserializer()
-            )
-            .registerTypeAdapter(
-                WorkspacesResponse::class.java,
-                SafeWorkspacesResponseDeserializer()
-            )
-            .registerTypeAdapter(
-                MessagesResponse::class.java,
-                SafeMessagesResponseDeserializer()
             )
             .registerTypeAdapter(
                 PrivateMessagesResponse::class.java,
@@ -80,6 +73,20 @@ object ApiClient {
             .registerTypeAdapter(
                 ConversationDetailsResponse::class.java,
                 SafeConversationDetailsResponseDeserializer()
+            )
+            // ✅ AJOUT: Désérialiseur pour les workspaces
+            .registerTypeAdapter(
+                WorkspacesResponse::class.java,
+                SafeWorkspacesResponseDeserializer()
+            )
+            // ✅ Désérialiseurs pour les notifications (si vous les gardez)
+            .registerTypeAdapter(
+                NotificationsResponse::class.java,
+                SafeNotificationsResponseDeserializer()
+            )
+            .registerTypeAdapter(
+                NotificationCountResponse::class.java,
+                SafeNotificationCountResponseDeserializer()
             )
             .create()
 
@@ -147,9 +154,10 @@ object ApiClient {
     fun addWorkspaceMember(
         token: String,
         workspaceId: String,
-        userId: String
+        utilisateurId: String,
+        role: String = "membre"
     ): Call<WorkspacesResponse> {
-        val addMemberRequest = WorkspaceAddMemberRequest(userId)
+        val addMemberRequest = WorkspaceAddMemberRequest(utilisateurId, role)
         return instance.addWorkspaceMember("Bearer $token", workspaceId, addMemberRequest)
     }
 
@@ -462,10 +470,24 @@ object ApiClient {
         return instance.deconnexion("Bearer $token")
     }
 
+    // === NOTIFICATIONS ===
     fun getUnreadNotificationCount(token: String): Call<NotificationCountResponse> {
         return instance.getUnreadNotificationCount("Bearer $token")
     }
 
+    fun getNotifications(token: String): Call<NotificationsResponse> {
+        return instance.getNotifications("Bearer $token")
+    }
+
+    fun markNotificationAsRead(token: String, notificationId: String): Call<NotificationsResponse> {
+        return instance.markNotificationAsRead("Bearer $token", notificationId)
+    }
+
+    fun markAllNotificationsAsRead(token: String): Call<NotificationsResponse> {
+        return instance.markAllNotificationsAsRead("Bearer $token")
+    }
+
+    // === FICHIERS POUR CONVERSATIONS ===
     fun uploadFileToConversation(
         token: String,
         conversationId: String,
@@ -591,16 +613,5 @@ object ApiClient {
         canalId: String
     ): Call<MessagesResponse> {
         return instance.getCanalFiles("Bearer $token", workspaceId, canalId)
-    }
-    fun getNotifications(token: String): Call<NotificationsResponse> {
-        return instance.getNotifications("Bearer $token")
-    }
-
-    fun markNotificationAsRead(token: String, notificationId: String): Call<NotificationsResponse> {
-        return instance.markNotificationAsRead("Bearer $token", notificationId)
-    }
-
-    fun markAllNotificationsAsRead(token: String): Call<NotificationsResponse> {
-        return instance.markAllNotificationsAsRead("Bearer $token")
     }
 }

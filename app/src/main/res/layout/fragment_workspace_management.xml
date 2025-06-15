@@ -1,106 +1,209 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#1a1a1a"
     tools:context=".ui.home.workspace.WorkspaceManagementFragment">
 
-    <TextView
-        android:id="@+id/title_workspaces"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:padding="16dp"
-        android:text="Gestion des workspaces"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Ajout d'une barre de recherche -->
+    <!-- Header moderne avec gradient -->
     <LinearLayout
-        android:id="@+id/search_container"
+        android:id="@+id/header_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        app:layout_constraintTop_toBottomOf="@id/title_workspaces">
+        android:orientation="vertical"
+        android:background="#ff6b35"
+        android:elevation="8dp">
 
-        <EditText
-            android:id="@+id/edit_search_query"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="Rechercher des workspaces publics"
-            android:inputType="text"
-            android:padding="12dp"
-            android:background="@android:drawable/editbox_background" />
+        <!-- Titre principal -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
 
-        <Button
-            android:id="@+id/btn_search_workspaces"
-            android:layout_width="wrap_content"
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@android:drawable/ic_menu_manage"
+                app:tint="#ffffff"
+                android:layout_marginEnd="12dp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🏢 Gestion des Workspaces"
+                android:textColor="#ffffff"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+
+            <ImageButton
+                android:id="@+id/menu_workspace_options"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@android:drawable/ic_menu_more"
+                android:background="@android:color/transparent"
+                android:contentDescription="Options"
+                app:tint="#ffffff" />
+
+        </LinearLayout>
+
+        <!-- Barre de recherche moderne -->
+        <LinearLayout
+            android:id="@+id/search_container"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="Rechercher" />
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:paddingTop="8dp"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:background="#40444b"
+                android:paddingHorizontal="16dp"
+                android:gravity="center_vertical"
+                android:layout_marginEnd="8dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="#888888"
+                    android:layout_marginEnd="8dp" />
+
+                <EditText
+                    android:id="@+id/edit_search_query"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Rechercher des workspaces..."
+                    android:textColorHint="#888888"
+                    android:textColor="#ffffff"
+                    android:textSize="14sp"
+                    android:background="@android:color/transparent"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch" />
+
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btn_search_workspaces"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:text="🔍"
+                android:textSize="16sp"
+                android:backgroundTint="#ff6b35"
+                android:textColor="#ffffff"
+                android:paddingHorizontal="20dp" />
+
+        </LinearLayout>
+
+        <!-- Filtres avec RadioGroup pour compatibilité -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="16dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Filtrer:"
+                android:textColor="#b3ffffff"
+                android:textSize="12sp"
+                android:layout_marginEnd="12dp" />
+
+            <RadioGroup
+                android:id="@+id/workspace_filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/radio_my_workspaces"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="📁 Mes Workspaces"
+                    android:textSize="12sp"
+                    android:textColor="#ffffff"
+                    android:buttonTint="#ff6b35"
+                    android:background="@drawable/modern_input_background"
+                    android:paddingHorizontal="16dp"
+                    android:layout_marginEnd="8dp"
+                    android:checked="true" />
+
+                <RadioButton
+                    android:id="@+id/radio_public_workspaces"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="🌐 Publics"
+                    android:textSize="12sp"
+                    android:textColor="#dcddde"
+                    android:buttonTint="#ff6b35"
+                    android:background="@drawable/modern_input_background"
+                    android:paddingHorizontal="16dp" />
+
+            </RadioGroup>
+
+        </LinearLayout>
+
     </LinearLayout>
 
-    <!-- Ajout d'un sélecteur pour filtrer entre Mes Workspaces et Workspaces Publics -->
-    <RadioGroup
-        android:id="@+id/workspace_filter"
+    <!-- Contenu principal -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        app:layout_constraintTop_toBottomOf="@id/search_container">
+        android:layout_height="match_parent"
+        android:layout_below="@id/header_container"
+        android:orientation="vertical">
 
-        <RadioButton
-            android:id="@+id/radio_my_workspaces"
+        <!-- Liste des workspaces -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_workspaces"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:scrollbars="vertical"
+            tools:listitem="@layout/item_workspace" />
+
+        <!-- Message quand pas de workspaces -->
+        <TextView
+            android:id="@+id/text_no_workspaces"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="Mes Workspaces" />
+            android:layout_gravity="center"
+            android:text="Aucun workspace disponible.\nUtilisez + pour créer un nouveau workspace."
+            android:textColor="#72767d"
+            android:textSize="14sp"
+            android:textAlignment="center"
+            android:padding="32dp"
+            android:visibility="gone" />
 
-        <RadioButton
-            android:id="@+id/radio_public_workspaces"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="Workspaces Publics" />
-    </RadioGroup>
+    </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_workspaces"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/workspace_filter"
-        tools:listitem="@layout/item_workspace" />
-
-    <TextView
-        android:id="@+id/text_no_workspaces"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Aucun workspace disponible.\nUtilisez + pour créer un nouveau workspace."
-        android:textAlignment="center"
-        android:textSize="16sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/workspace_filter" />
-
+    <!-- FAB moderne -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_add_workspace"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:contentDescription="Ajouter un workspace"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="20dp"
         android:src="@android:drawable/ic_input_add"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:contentDescription="Créer un workspace"
+        app:backgroundTint="#ff6b35"
+        app:tint="#ffffff"
+        android:elevation="8dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

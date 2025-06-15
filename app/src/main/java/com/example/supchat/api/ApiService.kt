@@ -428,7 +428,7 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Call<NotificationCountResponse>
 
-    @GET("/api/notifications")
+    @GET("/api/v1/notifications")
     fun getNotifications(
         @Header("Authorization") token: String
     ): Call<NotificationsResponse>

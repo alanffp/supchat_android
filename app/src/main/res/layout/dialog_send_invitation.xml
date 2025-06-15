@@ -1,24 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="20dp"
+    android:background="#2f3136">
 
+    <!-- Champ ID utilisateur (pour correspondre à votre API existante) -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ID Utilisateur"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:text="👤 ID Utilisateur"
+        android:textColor="#dcddde"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
 
-    <EditText
-        android:id="@+id/edit_user_id"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="Entrez l'ID de l'utilisateur à inviter"
-        android:inputType="text"
-        android:maxLines="1" />
+        android:orientation="horizontal"
+        android:background="@drawable/modern_input_background"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            app:tint="#888888"
+            android:layout_marginEnd="8dp" />
+
+        <EditText
+            android:id="@+id/edit_user_id"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="ID de l'utilisateur à inviter"
+            android:textColorHint="#888888"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:background="@android:color/transparent"
+            android:inputType="text"
+            android:imeOptions="actionDone" />
+
+    </LinearLayout>
+
+    <!-- Information -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#40444b"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@android:drawable/ic_dialog_info"
+            app:tint="#7289da"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Une invitation sera envoyée à cet utilisateur pour rejoindre le workspace"
+            android:textColor="#b9bbbe"
+            android:textSize="11sp" />
+
+    </LinearLayout>
 
 </LinearLayout>

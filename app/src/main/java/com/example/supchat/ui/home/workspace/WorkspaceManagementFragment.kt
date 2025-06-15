@@ -26,6 +26,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.example.supchat.ui.home.workspace.DialogWorkspace
+import com.example.supchat.ui.home.workspace.WorkspaceMemberDialog
 
 class WorkspaceManagementFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
@@ -576,14 +578,51 @@ class WorkspaceManagementFragment : Fragment() {
             }
         })
     }
-    private fun navigateToWorkspaceDetail(workspace: Workspace) {
-        // Ouvrir le fragment de gestion des membres du workspace
-        val membersFragment = WorkspaceMembersFragment.newInstance(workspace.id)
+    private fun navigateToWorkspaceDetail(workspace: com.example.supchat.models.response.Workspace) {
+        // Convertir votre modèle existant vers le modèle de la dialog
+        val dialogWorkspace = DialogWorkspace(
+            id = workspace.id,
+            nom = workspace.nom,
+            description = workspace.description
+        )
+
+        // Afficher la dialog de choix d'action
+        showWorkspaceMemberDialog(dialogWorkspace)
+    }
+
+    private fun showWorkspaceMemberDialog(workspace: DialogWorkspace) {
+        val memberDialog = WorkspaceMemberDialog(
+            context = requireContext(),
+            workspace = workspace,
+            onInviteMember = { ws ->
+                // Naviguer vers votre interface d'invitation existante
+                openInvitationInterface(ws)
+            },
+            onAddMember = { ws ->
+                // Actualiser la liste après ajout
+                loadWorkspaces(showLoadingIndicator = false)
+
+                // Optionnel: Afficher un message de succès
+                Toast.makeText(
+                    context,
+                    "✅ Membre ajouté au workspace ${ws.nom}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        )
+
+        memberDialog.show()
+    }
+
+    private fun openInvitationInterface(workspace: DialogWorkspace) {
+        // Naviguer vers votre WorkspaceInvitationsFragment existant
+        val invitationsFragment = WorkspaceInvitationsFragment.newInstance(workspace.id)
         requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.main_content_container, membersFragment)
+            .replace(R.id.main_content_container, invitationsFragment)
             .addToBackStack(null)
             .commit()
     }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
